@@ -1,42 +1,19 @@
 const { app, session, BrowserWindow } = require('electron')
-const https = require('node:https')
 const parseStringPromise = require('xml2js').parseStringPromise
+const { doPrelogin } = require('./portal')
+const { userAgent } = require('./consts')
+const { opts } = require('./config')
 
-const userAgent = 'PAN GlobalProtect'
 var serverCertFp = ""
-var opts = require('node-getopt').create([
-  ['h', 'host=ARG', 'The hostname of VPN server.'],
-  ['g', 'gateway=ARG', 'The prefered gateway.']
-])
-.bindHelp()
-.parseSystem()
 
 function createWindow(htmlContent) {
   const win = new BrowserWindow({
     width: 800,
     height: 600
   })
-
+  win.setMenuBarVisibility(false)
   win.loadURL('data:text/html;base64,' + htmlContent)
   return win
-}
-
-function fetchSamlResponse(hostname) {
-  return new Promise((resolve, reject) => {
-    url = `https://${hostname}/global-protect/prelogin.esp`
-    req = https.request(url, {
-      headers: {
-        'User-Agent': userAgent
-      },
-      method: 'POST'
-    }, (resp) => {
-      serverCertFp = resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '')
-      const chunks = []
-      resp.on('data', (chunk) => chunks.push(chunk))
-      resp.on('end', () => resolve(Buffer.concat(chunks).toString()))
-    })
-    req.end(Buffer.from('tmp=tmp&kerberos-support=yes&ipv6-support=yes&clientVer=4100&clientos=Linux'))
-  })
 }
 
 async function parseSamlRequest(rawSamlPrelogin) {
@@ -47,8 +24,9 @@ async function parseSamlRequest(rawSamlPrelogin) {
 }
 
 async function showLoginPage(hostname) {
-  var xml = await fetchSamlResponse(hostname)
-  var loginPage = await parseSamlRequest(xml)
+  var { preloginResp, fingerprint } = await doPrelogin(hostname)
+  serverCertFp = fingerprint
+  var loginPage = await parseSamlRequest(preloginResp)
   return createWindow(loginPage)
 }
 
@@ -76,12 +54,13 @@ async function main() {
     const gateway = opts.options.gateway
     const win = await showLoginPage(hostname)
     const {preloginCookie, samlUsername} = await checkAuthOk(hostname)
-    console.log(`echo '${preloginCookie}' | sudo openconnect --authgroup='${gateway}' --protocol=gp --user=${samlUsername} --os=linux --passwd-on-stdin --servercert ${serverCertFp} --usergroup=portal:prelogin-cookie --useragent='${userAgent}' ${hostname}`)
+    const xmlconfigFile = "TODO"
+    console.log(`echo '${preloginCookie}' | sudo openconnect --xmlconfig ${xmlconfigFile} --authgroup='${gateway}' --protocol=gp --user=${samlUsername} --os=linux --passwd-on-stdin --servercert ${serverCertFp} --usergroup=portal:prelogin-cookie --useragent='${userAgent}' ${hostname}`)
     if (preloginCookie) {
-      win.close()
+      //win.close()
     }
   } catch (e) {
-    console.error('login failed.')
+    console.error('login failed.', e)
   }
 }
 

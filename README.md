@@ -7,16 +7,5 @@
 ## How to run
 This command ONLY give you the enchanted `openconnect` command.  Copy the output command and paste again to the terminal.
 
-### Use source code
-```
-yarn run electron . -h vpn.some.com -g 'Taipei Somewhere'
-```
+# The details of the protocol
 
-### Build from source code and run
-Take Windows as an example
-```
-yarn run electron-packager . gpsaml --platform=win32 --arch=x64
-```
-
-## Known Issues
-- If you feel the network isn't working, please check route table first.  Sometime you need manually add route info.

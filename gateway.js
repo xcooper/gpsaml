@@ -6,10 +6,8 @@ function doPrelogin(hostname) {
 	return new Promise((resolve, reject) => {
 		got(`https://${hostname}/ssl-vpn/prelogin.esp?tmp=tmp&kerberos-support=yes&ipv6-support=yes&clientVer=4100&clientos=Linux`, {
 			method: 'POST',
-			userAgent: {
-				headers: {
-					'User-Agent': userAgent
-				}
+			headers: {
+				'User-Agent': userAgent
 			},
 			hooks: {
 				afterResponse: [

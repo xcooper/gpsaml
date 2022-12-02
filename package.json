@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "got": "11.8.3",
+    "loglevel": "^1.8.1",
     "node-getopt": "^0.3.2",
     "xml2js": "^0.4.23"
   }

@@ -9,3 +9,4 @@ This command ONLY give you the enchanted `openconnect` command.  Copy the output
 
 # The details of the protocol
 
+https://github.com/dlenski/openconnect/blob/master/PAN_GlobalProtect_protocol_doc.md

@@ -17,7 +17,7 @@ class Portal {
           afterResponse: [
             (resp, opts) => {
               this.fingerprint = resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '')
-              this.samlResponse = await #parseSamlRequest(resp.body)['prelogin-response']
+              this.samlResponse = await this.#parseSamlRequest(resp.body)['prelogin-response']
               this.success = this.samlResponse['status'] === 'Success'
               this.authMethod = this.samlResponse['saml-auth-method']
               if (this.success) {

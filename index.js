@@ -1,5 +1,4 @@
-const os = require('node:os')
-const { app, session, BrowserWindow } = require('electron')
+const { app } = require('electron')
 const parseStringPromise = require('xml2js').parseStringPromise
 const Portal = require('./portal')
 const { opts } = require('./config')
@@ -7,27 +6,19 @@ const { connectVpn } = require('./openconnect')
 const log = require('loglevel')
 log.setDefaultLevel('debug')
 
-var serverCertFp = ""
-
-async function showLoginPage(hostname) {
-  var { preloginResp, fingerprint } = await doPrelogin(hostname)
-  var portal = new Portal(hostname)
-  var loginPage = await portal.prelogin()
-  serverCertFp = portal.fingerprint
-  return createWindow(loginPage)
-}
-
 async function main() {
   try {
     const hostname = opts.options.host
     const gateway = opts.options.gateway
-    const win = await showLoginPage(hostname)
+    const portal = new Portal(hostname)
+    const html = await portal.prelogin()
+    const win = await createWindow(html)
     const {preloginCookie, samlUsername} = await checkAuthOk(hostname)
     connectVpn({
       preloginCookie,
       gateway,
       samlUsername,
-      serverCertFp,
+      portal.fingerprint,
       hostname
     })
     if (preloginCookie && !opts.options.debug) {

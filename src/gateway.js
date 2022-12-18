@@ -1,6 +1,6 @@
-const { userAgent } = require('./consts')
-const https = require('node:https')
-const got = require('got')
+const { userAgent } = require('./consts');
+const https = require('node:https');
+const got = require('got');
 
 function doPrelogin(hostname) {
 	return new Promise((resolve, reject) => {
@@ -15,12 +15,12 @@ function doPrelogin(hostname) {
 						resolve({
 							preloginResp: resp.body,
 							fingerprint: resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '')
-						})
+						});
 					}
 				]
 			}
-		})
-	})
+		});
+	});
 }
 
-module.exports = { doPrelogin }
+module.exports = { doPrelogin };

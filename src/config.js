@@ -4,6 +4,6 @@ const opts = require('node-getopt').create([
   ['g', 'gateway=ARG', 'The prefered gateway name.']
 ])
 .bindHelp()
-.parseSystem()
+.parseSystem();
 
-module.exports = { opts }
+module.exports = { opts };

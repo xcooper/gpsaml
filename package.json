@@ -4,6 +4,9 @@
   "main": "index.js",
   "author": "Cooper",
   "license": "MIT",
+  "scripts": {
+    "start": "electron src"
+  },
   "devDependencies": {
     "electron": "^21.2.1",
     "electron-packager": "^17.1.1",

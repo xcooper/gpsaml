@@ -1,4 +1,5 @@
 const { userAgent } = require('./consts');
+const parseStringPromise = require('xml2js').parseStringPromise;
 const got = require('got');
 
 class Portal {
@@ -30,10 +31,6 @@ class Portal {
         }
       });
     });
-  }
-
-  get fingerprint() {
-    return this.fingerprint;
   }
 
   async _parseSamlRequest(rawResponse) {

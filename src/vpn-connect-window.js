@@ -30,7 +30,7 @@ class LoginWindow {
       const filter = {
         urls: [`https://${this.hostname}/*`]
       };
-      this.win.session.webRequest.onHeadersReceived(filter, (details, callback) => {
+      this.win.webContents.session.webRequest.onHeadersReceived(filter, (details, callback) => {
         const headers = details.responseHeaders;
         callback({responseHeaders: headers});
         if (headers['prelogin-cookie']) {

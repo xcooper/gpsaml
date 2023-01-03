@@ -18,22 +18,25 @@ class Portal {
           afterResponse: [
             async (resp, opts) => {
               this.fingerprint = resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '');
-              this.samlResponse = await this._parseSamlRequest(resp.body)['prelogin-response'];
-              this.success = this.samlResponse.status === 'Success';
-              this.authMethod = this.samlResponse['saml-auth-method'];
+              this.samlResponse = await this._parseSamlRequest(resp.body);
+              const preloginResp = this.samlResponse['prelogin-response'];
+              this.success = preloginResp.status === 'Success';
+              this.authMethod = preloginResp['saml-auth-method'];
               if (this.success) {
-                resolve(this.samlResponse['saml-request']);
+                resolve(preloginResp['saml-request']);
               } else {
-                reject(this.samlResponse.msg);
+                reject(preloginResp.msg);
               }
+              return resp;
             }
           ]
         }
-      });
+      })
+      .catch(reject);
     });
   }
 
-  async _parseSamlRequest(rawResponse) {
+  _parseSamlRequest(rawResponse) {
     return parseStringPromise(rawResponse, {
       explicitArray: false
     });

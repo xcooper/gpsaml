@@ -2,21 +2,21 @@ const { app, session, BrowserWindow } = require('electron');
 const log = require('loglevel');
 
 class LoginWindow {
-  constructor(hostname, isRedirect) {
+  constructor(hostname) {
     this.hostname = hostname;
     this.winWidth = 800;
     this.winHeight = 600;
-    this.isRedirect = isRedirect || false;
   }
 
-  createWindow(url) {
+  createWindow(url, isRedirect) {
+    log.debug('the login URL - ' + url);
     const win = new BrowserWindow({
       width: 800,
       height: 600
     });
     win.setMenuBarVisibility(false);
-    if (this.isRedirect) {
-      win.loadURL(url);
+    if (isRedirect) {
+      win.loadURL(Buffer.from(url, 'base64').toString());
     } else {
       win.loadURL('data:text/html;base64,' + url);
     }

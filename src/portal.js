@@ -1,6 +1,7 @@
 const { userAgent } = require('./consts');
 const parseStringPromise = require('xml2js').parseStringPromise;
 const got = require('got');
+const log = require('loglevel');
 
 class Portal {
   constructor(hostname) {
@@ -17,6 +18,7 @@ class Portal {
         hooks: {
           afterResponse: [
             async (resp, opts) => {
+              log.debug('the SAML response after prelogin - %s', resp);
               this.fingerprint = resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '');
               this.samlResponse = await this._parseSamlRequest(resp.body);
               const preloginResp = this.samlResponse['prelogin-response'];
@@ -34,6 +36,10 @@ class Portal {
       })
       .catch(reject);
     });
+  }
+
+  isRedirect() {
+    return this.authMethod === 'REDIRECT';
   }
 
   _parseSamlRequest(rawResponse) {

@@ -13,7 +13,7 @@ async function main() {
     const gateway = opts.options.gateway;
     const portal = new Portal(hostname);
     const html = await portal.prelogin();
-    await win.createWindow(html);
+    await win.createWindow(html, portal.isRedirect());
     const {preloginCookie, samlUsername} = await win.preloginResponse;
     connectVpn(
       preloginCookie,

@@ -9,7 +9,7 @@ class LoginWindow {
   }
 
   createWindow(url, isRedirect) {
-    log.debug('the login URL - ' + url);
+    log.debug('the login URL - %s', url);
     const win = new BrowserWindow({
       width: 800,
       height: 600
@@ -32,6 +32,7 @@ class LoginWindow {
       };
       this.win.webContents.session.webRequest.onHeadersReceived(filter, (details, callback) => {
         const headers = details.responseHeaders;
+        log.debug('login process finished with headers - %s', headers);
         callback({responseHeaders: headers});
         if (headers['prelogin-cookie']) {
           resolve({

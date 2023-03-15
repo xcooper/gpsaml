@@ -10,14 +10,15 @@ async function main() {
   try {
     const hostname = opts.options.host;
     const win = new LoginWindow(hostname);
-    const gateway = opts.options.gateway;
+    const gatewayName = opts.options.gateway;
     const portal = new Portal(hostname);
     const html = await portal.prelogin();
     await win.createWindow(html, portal.isRedirect());
     const {preloginCookie, samlUsername} = await win.preloginResponse;
+    const config = await portal.getConfig(preloginCookie, samlUsername);
     connectVpn(
       preloginCookie,
-      gateway,
+      gatewayName,
       samlUsername,
       portal.fingerprint,
       hostname

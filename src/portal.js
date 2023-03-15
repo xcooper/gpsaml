@@ -10,10 +10,17 @@ class Portal {
 
   prelogin() {
     return new Promise((resolve, reject) => {
-      got(`https://${this.hostname}/global-protect/prelogin.esp?tmp=tmp&kerberos-support=yes&ipv6-support=yes&clientVer=4100&clientos=Linux`, {
+      got(`https://${this.hostname}/global-protect/prelogin.esp`, {
         method: 'POST',
         headers: {
           'User-Agent': userAgent
+        },
+        searchParams: {
+          'tmp': 'tmp',
+          'kerberos-support': 'yes',
+          'ipv6-support': 'yes',
+          'clientVer': '4100',
+          'clientos': 'Linux'
         },
         hooks: {
           afterResponse: [
@@ -21,15 +28,43 @@ class Portal {
               log.debug('the SAML response after prelogin - %s', resp);
               this.fingerprint = resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '');
               this.samlResponse = await this._parseSamlRequest(resp.body);
-              const preloginResp = this.samlResponse['prelogin-response'];
-              this.success = preloginResp.status === 'Success';
-              this.authMethod = preloginResp['saml-auth-method'];
+              this.preloginResp = this.samlResponse['prelogin-response'];
+              this.success = this.preloginResp.status === 'Success';
+              this.authMethod = this.preloginResp['saml-auth-method'];
               if (this.success) {
-                resolve(preloginResp['saml-request']);
+                resolve(this.preloginResp['saml-request']);
               } else {
-                reject(preloginResp.msg);
+                reject(this.preloginResp.msg);
               }
               return resp;
+            }
+          ]
+        }
+      })
+      .catch(reject);
+    });
+  }
+
+  getConfig(
+    preloginCookie,
+    samlUsername
+  ) {
+    return new Promise((resolve, reject) => {
+      got(`https://${this.hostname}/global-protect/getconfig.esp`, {
+        method: 'POST',
+        headers: {
+          'User-Agent': userAgent
+        },
+        form: {
+          'prelogin-cookie': preloginCookie,
+          'user': samlUsername
+        },
+        hooks: {
+          afterResponse: [
+            async (resp, opts) => {
+              log.debug('the Config response - %s', resp);
+              this.config = await this._parseConfig(resp.body);
+              resolve(this.config);
             }
           ]
         }
@@ -43,6 +78,12 @@ class Portal {
   }
 
   _parseSamlRequest(rawResponse) {
+    return parseStringPromise(rawResponse, {
+      explicitArray: false
+    });
+  }
+
+  _parseConfig(rawResponse) {
     return parseStringPromise(rawResponse, {
       explicitArray: false
     });

@@ -16,6 +16,7 @@ async function main() {
     await win.createWindow(html, portal.isRedirect());
     const {preloginCookie, samlUsername} = await win.preloginResponse;
     const config = await portal.getConfig(preloginCookie, samlUsername);
+    log.debug('config', config);
     connectVpn(
       preloginCookie,
       gatewayName,

@@ -27,11 +27,11 @@ class Portal {
             async (resp, opts) => {
               log.debug('the SAML response after prelogin - %s', resp);
               this.fingerprint = resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '');
-              this.samlResponse = await this._parseSamlRequest(resp.body);
-              this.preloginResp = this.samlResponse['prelogin-response'];
-              this.success = this.preloginResp.status === 'Success';
-              this.authMethod = this.preloginResp['saml-auth-method'];
+              this.success = resp.ok && this.preloginResp.status === 'Success';
               if (this.success) {
+                this.samlResponse = await this._parseSamlRequest(resp.body);
+                this.preloginResp = this.samlResponse['prelogin-response'];
+                this.authMethod = this.preloginResp['saml-auth-method'];
                 resolve(this.preloginResp['saml-request']);
               } else {
                 reject(this.preloginResp.msg);
@@ -64,7 +64,16 @@ class Portal {
             async (resp, opts) => {
               log.debug('the Config response - %s', resp);
               this.config = await this._parseConfig(resp.body);
-              resolve(this.config);
+              if (resp.ok) {
+                this.portalUserAuthCookie = this.config['policy']['portal-userauthcookie'];
+                this.userEmail = this.config['policy']['user-email'];
+                this.portalPreloginUserAuthCookie = this.config['policy']['portal-preloginuserauthcookie'];
+                log.debug('portalUserAuthCookie', portalUserAuthCookie);
+                resolve(this.config);
+              } else {
+                reject(resp.statusMessage);
+              }
+              return resp;
             }
           ]
         }

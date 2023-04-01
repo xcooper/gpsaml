@@ -27,11 +27,13 @@ class Portal {
             async (resp, opts) => {
               log.debug('the SAML response after prelogin - %s', resp);
               this.fingerprint = resp.socket.getPeerCertificate().fingerprint.replaceAll(':', '');
-              this.success = resp.ok && this.preloginResp.status === 'Success';
+              this.samlResponse = await this._parseSamlRequest(resp.body);
+              this.preloginResp = this.samlResponse['prelogin-response'];
+              this.success = this.preloginResp.status === 'Success';
               if (this.success) {
-                this.samlResponse = await this._parseSamlRequest(resp.body);
-                this.preloginResp = this.samlResponse['prelogin-response'];
                 this.authMethod = this.preloginResp['saml-auth-method'];
+                this.samlUsername = this.preloginResp['saml-username'];
+                this.preloginCookie = this.preloginResp['prelogin-cookie'];
                 resolve(this.preloginResp['saml-request']);
               } else {
                 reject(this.preloginResp.msg);
@@ -45,10 +47,7 @@ class Portal {
     });
   }
 
-  getConfig(
-    preloginCookie,
-    samlUsername
-  ) {
+  getConfig(preloginCookie, samlUsername) {
     return new Promise((resolve, reject) => {
       got(`https://${this.hostname}/global-protect/getconfig.esp`, {
         method: 'POST',
@@ -63,13 +62,15 @@ class Portal {
           afterResponse: [
             async (resp, opts) => {
               log.debug('the Config response - %s', resp);
-              this.config = await this._parseConfig(resp.body);
-              if (resp.ok) {
-                this.portalUserAuthCookie = this.config['policy']['portal-userauthcookie'];
-                this.userEmail = this.config['policy']['user-email'];
-                this.portalPreloginUserAuthCookie = this.config['policy']['portal-preloginuserauthcookie'];
-                log.debug('portalUserAuthCookie', portalUserAuthCookie);
-                resolve(this.config);
+              if (resp.statusCode == 200) {
+                this.config = await this._parseConfig(resp.body);
+                // pass [username, password, portalUserAuthCookie] to gateway
+                this.policy = this.config['policy'];
+                this.portalUserAuthCookie = this.policy['portal-userauthcookie'];
+                this.userEmail = this.policy['user-email'];
+                this.portalPreloginUserAuthCookie = this.policy['portal-preloginuserauthcookie'];
+                log.debug('portalUserAuthCookie - %s', this.portalUserAuthCookie);
+                resolve(this.policy);
               } else {
                 reject(resp.statusMessage);
               }

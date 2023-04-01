@@ -1,6 +1,7 @@
 const { app } = require('electron');
 const { opts } = require('./config');
 const { Portal } = require('./portal');
+const { Gateway } = require('./gateway');
 const { LoginWindow } = require('./vpn-connect-window');
 const { connectVpn } = require('./openconnect');
 const log = require('loglevel');
@@ -15,8 +16,10 @@ async function main() {
     const html = await portal.prelogin();
     await win.createWindow(html, portal.isRedirect());
     const {preloginCookie, samlUsername} = await win.preloginResponse;
-    const config = await portal.getConfig(preloginCookie, samlUsername);
-    log.debug('config', config);
+    const policy = await portal.getConfig(preloginCookie, samlUsername);
+    log.debug('policy', policy);
+    const gateway = new Gateway();
+    await gateway.doLogin(policy['portal-userauthcookie']);
     connectVpn(
       preloginCookie,
       gatewayName,

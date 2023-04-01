@@ -37,9 +37,9 @@ class Gateway {
 		});
 	}
 
-	doLogin(portalUserAuthCookie) {
+	doLogin(hostname, portalUserAuthCookie) {
 		return new Promise((resolve, reject) => {
-			got(`https://taipei-vpn.commscope.com/ssl-vpn/login.esp`, {
+			got(`https://${hostname}/ssl-vpn/login.esp`, {
 				method: 'POST',
 				headers: {
 					'User-Agent': userAgent

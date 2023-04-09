@@ -19,13 +19,13 @@ async function main() {
     const policy = await portal.getConfig(preloginCookie, samlUsername);
     log.debug('policy', policy);
     const gateway = new Gateway();
-    await gateway.doLogin(policy['portal-userauthcookie']);
+    const loginResp = await gateway.doLogin(policy.userName, policy.portalUserAuthCookie);
     connectVpn(
-      preloginCookie,
+      loginResp,
       gatewayName,
-      samlUsername,
+      loginResp.user,
       portal.fingerprint,
-      hostname
+      'taiwan-vpn.commscope.com'
     );
     if (preloginCookie && !opts.options.debug) {
       win.close();

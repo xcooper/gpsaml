@@ -70,7 +70,12 @@ class Portal {
                 this.userEmail = this.policy['user-email'];
                 this.portalPreloginUserAuthCookie = this.policy['portal-preloginuserauthcookie'];
                 log.debug('portalUserAuthCookie - %s', this.portalUserAuthCookie);
-                resolve(this.policy);
+                resolve({
+                  userName: this.samlUsername,
+                  portalUserAuthCookie: this.portalUserAuthCookie,
+                  portalPreloginUserAuthCookie: this.portalPreloginUserAuthCookie,
+                  userEmail: this.userEmail
+                });
               } else {
                 reject(resp.statusMessage);
               }

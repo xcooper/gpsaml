@@ -1,6 +1,7 @@
 const { userAgent } = require('./consts');
 const https = require('node:https');
 const parseStringPromise = require('xml2js').parseStringPromise;
+const os = require('os');
 const got = require('got');
 const log = require('loglevel');
 
@@ -37,9 +38,9 @@ class Gateway {
 		});
 	}
 
-	doLogin(hostname, portalUserAuthCookie) {
+	doLogin(userName, portalUserAuthCookie) {
 		return new Promise((resolve, reject) => {
-			got(`https://${hostname}/ssl-vpn/login.esp`, {
+			got(`https://taiwan-vpn.commscope.com/ssl-vpn/login.esp`, {
 				method: 'POST',
 				headers: {
 					'User-Agent': userAgent
@@ -47,7 +48,7 @@ class Gateway {
 				form: {
 					'portal-userauthcookie': portalUserAuthCookie,
 					'clientos': 'linux',
-					'user': 'commscope\\chsiao',
+					'user': userName,
 					'ok': 'Login',
 					'direct': 'yes',
 					'jnlpReady': 'jnlpReady',
@@ -58,14 +59,27 @@ class Gateway {
 					afterResponse: [
 						async (resp, opts) => {
 							var jnlp = await this._parseLoginResponse(resp.body);
-							log.debug('login response - %s', JSON.stringify(jnlp, null, 2));
-							resolve(jnlp);
+							this.loginResp = this.createLoginResp(jnlp);
+							log.debug('login response - %s', JSON.stringify(this.loginResp, null, 2));
+							resolve(this.loginResp);
 							return resp;
 						}
 					]
 				}
 			});
 		});
+	}
+
+	createLoginResp(jnlp) {
+		var args = jnlp['jnlp']['application-desc']['argument'];
+		return {
+			authcookie: args[1],
+			portal: args[3],
+			user: args[4],
+			domain: args[7],
+			"preferred-ip": args[15],
+			computer: os.hostname()
+		};
 	}
 
   _parseLoginResponse(rawResponse) {

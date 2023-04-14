@@ -52,7 +52,7 @@ class Gateway {
 					'ok': 'Login',
 					'direct': 'yes',
 					'jnlpReady': 'jnlpReady',
-					'computer': 'Cooper-Surface',
+					'computer': os.hostname(),
 					'clientVer': '4100'
 				},
 				hooks: {

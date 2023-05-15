@@ -1,5 +1,5 @@
-const { app, session, BrowserWindow } = require('electron');
-const log = require('loglevel');
+const {BrowserWindow} = require("electron");
+const log = require("loglevel");
 
 class LoginWindow {
   constructor(hostname) {
@@ -11,8 +11,8 @@ class LoginWindow {
   createWindow(url, isRedirect) {
     log.debug('the login URL - %s', url);
     const win = new BrowserWindow({
-      width: 800,
-      height: 600
+      width: this.winWidth,
+      height: this.winHeight
     });
     win.setMenuBarVisibility(false);
     if (isRedirect) {
@@ -21,12 +21,12 @@ class LoginWindow {
       win.loadURL('data:text/html;base64,' + url);
     }
     this.win = win;
-    this.preloginResponse = this._checkAuthOk();
+    this.samlResponse = this._checkAuthOk();
     return win;
   }
 
   _checkAuthOk() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const filter = {
         urls: [`https://${this.hostname}/*`]
       };
@@ -49,4 +49,4 @@ class LoginWindow {
   }
 }
 
-module.exports = { LoginWindow };
+module.exports = {LoginWindow};

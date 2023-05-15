@@ -1,38 +1,35 @@
-const { app } = require('electron');
-const { opts } = require('./config');
-const { Portal } = require('./portal');
-const { Gateway } = require('./gateway');
-const { LoginWindow } = require('./vpn-connect-window');
-const { connectVpn } = require('./openconnect');
-const log = require('loglevel');
+const {app} = require('electron');
+const {opts} = require("./cli");
+const {Gateway, Portal} = require("./endpoints");
+const {connectVpn} = require("./openconnect");
+const log = require("loglevel");
+
 log.setDefaultLevel('debug');
 
 async function main() {
   try {
     const hostname = opts.options.host;
-    const win = new LoginWindow(hostname);
-    const gatewayName = opts.options.gateway;
     const portal = new Portal(hostname);
-    const html = await portal.prelogin();
-    await win.createWindow(html, portal.isRedirect());
-    const {preloginCookie, samlUsername} = await win.preloginResponse;
-    const policy = await portal.getConfig(preloginCookie, samlUsername);
-    log.debug('policy', policy);
-    const gateway = new Gateway();
-    const loginResp = await gateway.doLogin(policy.userName, policy.portalUserAuthCookie);
+    await portal.doPrelogin();
+    await portal.doSamlAuth();
+    const policy = await portal.getConfig();
+    const fingerprint = portal.fingerprint;
+    const gateway = new Gateway(
+      'taiwan-vpn.commscope.com',
+      policy.portalUserAuthCookie,
+      policy.userName
+    );
+    const loginResp = await gateway.doLogin();
     connectVpn(
       loginResp,
-      gatewayName,
       loginResp.user,
-      portal.fingerprint,
-      'taiwan-vpn.commscope.com'
+      fingerprint,
+      gateway.hostname
     );
-    if (preloginCookie && !opts.options.debug) {
-      win.close();
-    }
   } catch (e) {
     console.error('login failed.', e);
   }
+  app.quit();
 }
 
 app.whenReady().then(() => {
@@ -42,8 +39,4 @@ app.whenReady().then(() => {
     }
   });
   main();
-});
-
-app.on('window-all-closed', () => {
-  app.quit();
 });

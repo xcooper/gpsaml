@@ -1,14 +1,25 @@
-const {BrowserWindow} = require("electron");
-const log = require("loglevel");
+import { BrowserWindow } from 'electron';
+import * as log from 'loglevel';
+
+interface SamlResponse {
+  preloginCookie: string | string[];
+  samlUsername: string | string[];
+}
 
 class LoginWindow {
-  constructor(hostname) {
+  private hostname: string;
+  private winWidth: number;
+  private winHeight: number;
+  private win!: BrowserWindow;
+  public samlResponse!: Promise<SamlResponse>;
+
+  constructor(hostname: string) {
     this.hostname = hostname;
     this.winWidth = 800;
     this.winHeight = 600;
   }
 
-  createWindow(url, isRedirect) {
+  createWindow(url: string, isRedirect: boolean): BrowserWindow {
     log.debug('the login URL - %s', url);
     const win = new BrowserWindow({
       width: this.winWidth,
@@ -25,7 +36,7 @@ class LoginWindow {
     return win;
   }
 
-  _checkAuthOk() {
+  private _checkAuthOk(): Promise<SamlResponse> {
     return new Promise((resolve) => {
       const filter = {
         urls: [`https://${this.hostname}/*`]
@@ -33,20 +44,25 @@ class LoginWindow {
       this.win.webContents.session.webRequest.onHeadersReceived(filter, (details, callback) => {
         const headers = details.responseHeaders;
         log.debug('login process finished with headers - %s', headers);
-        callback({responseHeaders: headers});
-        if (headers['prelogin-cookie']) {
-          resolve({
+        callback({ responseHeaders: headers });
+        if (headers && headers['prelogin-cookie']) {
+          const response = {
             preloginCookie: headers['prelogin-cookie'],
             samlUsername: headers['saml-username']
-          });
+          };
+          resolve(response);
+          // Auto-close window after successful SAML authentication
+          setTimeout(() => {
+            this.close();
+          }, 500);
         }
       });
     });
   }
 
-  close() {
+  close(): void {
     this.win.close();
   }
 }
 
-module.exports = {LoginWindow};
+export { LoginWindow, SamlResponse };

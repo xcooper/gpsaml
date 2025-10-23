@@ -1,22 +1,33 @@
 {
   "name": "gpsaml",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "author": "Cooper",
   "license": "MIT",
   "scripts": {
-    "start": "electron src"
+    "build": "tsc",
+    "start": "npm run build && electron dist",
+    "dev": "tsc && electron dist",
+    "package": "npm run build && electron-packager . gpsaml --platform=linux --arch=x64 --out=release --overwrite --prune=true",
+    "package:win": "npm run build && electron-packager . gpsaml --platform=win32 --arch=x64 --out=release --overwrite --prune=true --no-deref-symlinks",
+    "package:all": "npm run build && electron-packager . gpsaml --all --out=release --overwrite --prune=true"
   },
   "devDependencies": {
-    "electron": "21.3.4",
-    "electron-packager": "^17.1.1",
-    "jest": "^29.5.0",
-    "jshint": "^2.13.6"
+    "@types/electron": "^1.4.38",
+    "@types/node": "^24.9.1",
+    "@types/node-getopt": "^0.2.35",
+    "@types/xml2js": "^0.4.14",
+    "electron": "^38.4.0",
+    "electron-packager": "^17.1.2",
+    "jest": "^30.2.0",
+    "jshint": "^2.13.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "got": "11.8.5",
-    "loglevel": "^1.8.1",
+    "got": "^11.8.6",
+    "loglevel": "^1.9.2",
     "node-getopt": "^0.3.2",
-    "xml2js": "0.5.0"
+    "xml2js": "^0.6.2"
   }
 }

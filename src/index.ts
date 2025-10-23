@@ -1,14 +1,17 @@
-const {app} = require('electron');
-const {opts} = require("./cli");
-const {Gateway, Portal} = require("./endpoints");
-const {connectVpn} = require("./openconnect");
-const log = require("loglevel");
+import { app, BrowserWindow } from 'electron';
+import { opts } from './cli';
+import { Gateway, Portal } from './endpoints';
+import { connectVpn } from './openconnect';
+import * as log from 'loglevel';
+
+// Disable GPU to avoid crashes in headless/server environments
+app.disableHardwareAcceleration();
 
 log.setDefaultLevel('debug');
 
-async function main() {
+async function main(): Promise<void> {
   try {
-    const hostname = opts.options.host;
+    const hostname = opts.options.host!;
     const portal = new Portal(hostname);
     await portal.doPrelogin();
     await portal.doSamlAuth();
@@ -23,7 +26,7 @@ async function main() {
     connectVpn(
       loginResp,
       loginResp.user,
-      fingerprint,
+      fingerprint!,
       gateway.hostname
     );
   } catch (e) {

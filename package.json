@@ -10,19 +10,28 @@
     "dev": "tsc && electron dist",
     "package": "npm run build && electron-packager . gpsaml --platform=linux --arch=x64 --out=release --overwrite --prune=true",
     "package:win": "npm run build && electron-packager . gpsaml --platform=win32 --arch=x64 --out=release --overwrite --prune=true --no-deref-symlinks",
-    "package:all": "npm run build && electron-packager . gpsaml --all --out=release --overwrite --prune=true"
+    "package:all": "npm run build && electron-packager . gpsaml --all --out=release --overwrite --prune=true",
+    "prepare": "husky",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --write ."
   },
   "devDependencies": {
-    "@types/electron": "^1.4.38",
     "@types/node": "^24.9.1",
     "@types/node-getopt": "^0.2.35",
     "@types/xml2js": "^0.4.14",
     "electron": "^38.4.0",
     "electron-packager": "^17.1.2",
-    "jest": "^30.2.0",
     "jshint": "^2.13.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,json,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "got": "^11.8.6",

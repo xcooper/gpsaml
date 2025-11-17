@@ -1,7 +1,7 @@
-import { userAgent } from './consts';
-import { URLSearchParams } from 'url';
-import { exec } from 'child_process';
-import * as log from 'loglevel';
+import { userAgent } from "./consts";
+import { URLSearchParams } from "url";
+import { exec } from "child_process";
+import * as log from "loglevel";
 
 interface LoginResponse {
   domain: string;
@@ -13,7 +13,7 @@ function connectVpn(
   loginResp: LoginResponse,
   samlUsername: string,
   fingerprint: string,
-  hostname: string
+  hostname: string,
 ): void {
   const cookie = new URLSearchParams(loginResp as Record<string, string>);
   const proc = exec(
@@ -23,8 +23,8 @@ function connectVpn(
       if (error) {
         throw error;
       }
-      console.log('stdout: ' + stdout);
-    }
+      console.log("stdout: " + stdout);
+    },
   );
 }
 

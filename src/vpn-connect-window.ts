@@ -1,5 +1,5 @@
-import { BrowserWindow } from 'electron';
-import * as log from 'loglevel';
+import { BrowserWindow } from "electron";
+import * as log from "loglevel";
 
 interface SamlResponse {
   preloginCookie: string | string[];
@@ -20,16 +20,16 @@ class LoginWindow {
   }
 
   createWindow(url: string, isRedirect: boolean): BrowserWindow {
-    log.debug('the login URL - %s', url);
+    log.debug("the login URL - %s", url);
     const win = new BrowserWindow({
       width: this.winWidth,
-      height: this.winHeight
+      height: this.winHeight,
     });
     win.setMenuBarVisibility(false);
     if (isRedirect) {
-      win.loadURL(Buffer.from(url, 'base64').toString());
+      win.loadURL(Buffer.from(url, "base64").toString());
     } else {
-      win.loadURL('data:text/html;base64,' + url);
+      win.loadURL("data:text/html;base64," + url);
     }
     this.win = win;
     this.samlResponse = this._checkAuthOk();
@@ -39,24 +39,27 @@ class LoginWindow {
   private _checkAuthOk(): Promise<SamlResponse> {
     return new Promise((resolve) => {
       const filter = {
-        urls: [`https://${this.hostname}/*`]
+        urls: [`https://${this.hostname}/*`],
       };
-      this.win.webContents.session.webRequest.onHeadersReceived(filter, (details, callback) => {
-        const headers = details.responseHeaders;
-        log.debug('login process finished with headers - %s', headers);
-        callback({ responseHeaders: headers });
-        if (headers && headers['prelogin-cookie']) {
-          const response = {
-            preloginCookie: headers['prelogin-cookie'],
-            samlUsername: headers['saml-username']
-          };
-          resolve(response);
-          // Auto-close window after successful SAML authentication
-          setTimeout(() => {
-            this.close();
-          }, 500);
-        }
-      });
+      this.win.webContents.session.webRequest.onHeadersReceived(
+        filter,
+        (details, callback) => {
+          const headers = details.responseHeaders;
+          log.debug("login process finished with headers - %s", headers);
+          callback({ responseHeaders: headers });
+          if (headers && headers["prelogin-cookie"]) {
+            const response = {
+              preloginCookie: headers["prelogin-cookie"],
+              samlUsername: headers["saml-username"],
+            };
+            resolve(response);
+            // Auto-close window after successful SAML authentication
+            setTimeout(() => {
+              this.close();
+            }, 500);
+          }
+        },
+      );
     });
   }
 

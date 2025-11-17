@@ -2,10 +2,15 @@
   "name": "gpsaml",
   "version": "1.0.0",
   "main": "dist/index.js",
+  "files": [
+    "dist/**/*"
+  ],
   "author": "Cooper",
   "license": "MIT",
   "scripts": {
+    "clean": "rm -rf ./dist ./release",
     "build": "tsc",
+    "postbuild": "cp -r ./assets ./dist/assets",
     "start": "npm run build && electron dist",
     "dev": "tsc && electron dist",
     "package": "npm run build && electron-packager . gpsaml --platform=linux --arch=x64 --out=release --overwrite --prune=true",

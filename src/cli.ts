@@ -20,9 +20,9 @@ const opts = nodeGetopt
   .bindHelp()
   .parseSystem() as { options: CliOptions; argv: string[] };
 
+// Host becomes optional; if absent we fall back to GUI form.
 if (!opts.options.host) {
-  console.error("The hostname is mandatory.");
-  process.exit(1);
+  console.log("No host provided via CLI; launching host input window.");
 }
 
 export { opts, CliOptions };

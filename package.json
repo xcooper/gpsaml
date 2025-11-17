@@ -9,8 +9,9 @@
   "license": "MIT",
   "scripts": {
     "clean": "rm -rf ./dist ./release",
+    "prebuild": "rm -rf ./dist",
     "build": "tsc",
-    "postbuild": "cp -r ./assets ./dist/assets",
+    "postbuild": "cp -r ./assets ./dist/",
     "start": "npm run build && electron dist",
     "dev": "tsc && electron dist",
     "package": "npm run build && electron-packager . gpsaml --platform=linux --arch=x64 --out=release --overwrite --prune=true",
@@ -22,16 +23,16 @@
   },
   "devDependencies": {
     "@types/node": "^24.9.1",
-    "@types/node-getopt": "^0.2.35",
     "@types/xml2js": "^0.4.14",
+    "@types/yargs": "^17.0.35",
     "electron": "^38.4.0",
     "electron-packager": "^17.1.2",
-    "jshint": "^2.13.6",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3",
     "husky": "^9.1.6",
+    "jshint": "^2.13.6",
     "lint-staged": "^15.2.10",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "lint-staged": {
     "*.{ts,tsx,js,json,md}": [
@@ -41,7 +42,7 @@
   "dependencies": {
     "got": "^11.8.6",
     "loglevel": "^1.9.2",
-    "node-getopt": "^0.3.2",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "yargs": "^18.0.0"
   }
 }

@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron";
-import { html } from "./resource";
+import { loadResource } from "./resource";
 
 function createHostWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -12,7 +12,7 @@ function createHostWindow(): BrowserWindow {
     },
   });
   win.setMenuBarVisibility(false);
-  win.loadFile(html("host.html"));
+  win.loadFile(loadResource("host.html"));
   return win;
 }
 

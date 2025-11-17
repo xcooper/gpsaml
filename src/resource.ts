@@ -3,8 +3,8 @@ import path from "path";
 
 const ASSETS = "assets";
 
-function html(fileName: string): string {
-  return path.join(app.getAppPath(), ASSETS, "html", fileName);
+function loadResource(fileName: string): string {
+  return path.join(app.getAppPath(), ASSETS, fileName);
 }
 
-export { html };
+export { loadResource };

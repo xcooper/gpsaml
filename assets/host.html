@@ -19,16 +19,6 @@
     <input id="host" name="host" type="text" placeholder="example.vpn.com" autofocus required />
     <button type="submit">Connect</button>
   </form>
-  <script>
-    const { ipcRenderer } = require('electron');
-    document.getElementById('hostForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const hostInput = document.getElementById('host');
-      const host = hostInput.value.trim();
-      if (!host) { return; }
-      ipcRenderer.send('host-submitted', host);
-      hostInput.disabled = true;
-    });
-  </script>
+  <script src="./host.js"></script>
 </body>
 </html>

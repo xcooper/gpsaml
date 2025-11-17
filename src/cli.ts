@@ -1,5 +1,6 @@
 import * as process from "node:process";
-import nodeGetopt from "node-getopt";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 
 interface CliOptions {
   debug?: boolean;
@@ -9,19 +10,31 @@ interface CliOptions {
   user?: string;
 }
 
-const opts = nodeGetopt
-  .create([
-    ["", "debug", "Debug this command by providing more details."],
-    ["h", "host=ARG", "The hostname of VPN server."],
-    ["g", "gateway=ARG", "The prefered gateway name."],
-    ["k", "key=ARG", "The portal user key."],
-    ["u", "user=ARG", "The user name."],
-  ])
-  .bindHelp()
-  .parseSystem() as { options: CliOptions; argv: string[] };
+const opts = yargs(hideBin(process.argv))
+  .option("debug", {
+    type: "boolean",
+    description: "Debug this command by providing more details.",
+  })
+  .option("host", {
+    type: "boolean",
+    description: "The hostname of VPN server.",
+  })
+  .option("gateway", {
+    type: "boolean",
+    description: "The prefered gateway name.",
+  })
+  .option("key", {
+    type: "boolean",
+    description: "The portal user key.",
+  })
+  .option("user", {
+    type: "string",
+    description: "The user name.",
+  })
+  .parse() as CliOptions;
 
 // Host becomes optional; if absent we fall back to GUI form.
-if (!opts.options.host) {
+if (!opts.host) {
   console.log("No host provided via CLI; launching host input window.");
 }
 

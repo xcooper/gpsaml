@@ -12,7 +12,7 @@ log.setDefaultLevel("debug");
 
 async function main(): Promise<void> {
   try {
-    const hostname = opts.options.host!;
+    const hostname = opts.host!;
     const portal = new Portal(hostname);
     await portal.doPrelogin();
     await portal.doSamlAuth();
@@ -34,7 +34,6 @@ async function main(): Promise<void> {
 function maybeLaunchHostWindow(): void {
   const win = createHostWindow();
   ipcMain.on("host-submitted", (_event, host: string) => {
-    log.debug("Host submitted via GUI: %s", host);
     // Prevent duplicate submissions.
     ipcMain.removeAllListeners("host-submitted");
     win.close();

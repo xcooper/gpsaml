@@ -31,20 +31,17 @@ async function main(): Promise<void> {
   app.quit();
 }
 
-function maybeLaunchHostWindow(): void {
-  const win = createHostWindow();
-  ipcMain.on("host-submitted", (_event, host: string) => {
-    // Prevent duplicate submissions.
-    ipcMain.removeAllListeners("host-submitted");
-    win.close();
-  });
+async function enterEntryPoint(): Promise<void> {
+  const host = await createHostWindow();
+  log.error(host);
+  app.quit();
 }
 
-app.whenReady().then(() => {
-  app.on("activate", () => {
+app.whenReady().then(async () => {
+  app.on("activate", async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      maybeLaunchHostWindow();
+      await enterEntryPoint();
     }
   });
-  maybeLaunchHostWindow();
+  await enterEntryPoint();
 });

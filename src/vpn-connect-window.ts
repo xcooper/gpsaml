@@ -47,16 +47,13 @@ class LoginWindow {
           const headers = details.responseHeaders;
           log.debug("login process finished with headers - %s", headers);
           callback({ responseHeaders: headers });
-          if (headers && headers["prelogin-cookie"]) {
+          if (headers && headers["Prelogin-Cookie"]) {
             const response = {
-              preloginCookie: headers["prelogin-cookie"],
-              samlUsername: headers["saml-username"],
+              preloginCookie: headers["Prelogin-Cookie"],
+              samlUsername: headers["Saml-Username"],
             };
+            this.close();
             resolve(response);
-            // Auto-close window after successful SAML authentication
-            setTimeout(() => {
-              this.close();
-            }, 500);
           }
         },
       );

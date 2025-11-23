@@ -9,7 +9,7 @@
   "license": "MIT",
   "scripts": {
     "clean": "rm -rf ./dist ./release",
-    "prebuild": "rm -rf ./dist",
+    "prebuild": "npm run clean",
     "build": "tsc",
     "postbuild": "cp -r ./assets ./dist/",
     "start": "npm run build && electron dist",

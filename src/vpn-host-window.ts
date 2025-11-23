@@ -2,7 +2,7 @@ import { ipcMain } from "electron";
 import { BrowserWindow } from "electron";
 import { loadResource } from "./resource";
 
-async function createHostWindow(): Promise<String> {
+async function createHostWindow(): Promise<string> {
   const win = new BrowserWindow({
     width: 420,
     height: 220,
@@ -14,7 +14,7 @@ async function createHostWindow(): Promise<String> {
   });
   win.setMenuBarVisibility(false);
   await win.loadFile(loadResource("host.html"));
-  const { promise, resolve } = Promise.withResolvers<String>();
+  const { promise, resolve } = Promise.withResolvers<string>();
   ipcMain.on("host-submitted", (_event, host: string) => {
     ipcMain.removeAllListeners("host-submitted");
     win.close();

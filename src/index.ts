@@ -10,9 +10,9 @@ app.disableHardwareAcceleration();
 
 log.setDefaultLevel("debug");
 
-async function main(): Promise<void> {
+async function enterEntryPoint(): Promise<void> {
   try {
-    const hostname = opts.host!;
+    const hostname = await createHostWindow();
     const portal = new Portal(hostname);
     await portal.doPrelogin();
     await portal.doSamlAuth();
@@ -28,14 +28,11 @@ async function main(): Promise<void> {
   } catch (e) {
     console.error("login failed.", e);
   }
-  app.quit();
 }
 
-async function enterEntryPoint(): Promise<void> {
-  const host = await createHostWindow();
-  log.error(host);
-  app.quit();
-}
+app.on("window-all-closed", () => {
+  // just prevent the app terminated after the 1st window closed!
+});
 
 app.whenReady().then(async () => {
   app.on("activate", async () => {

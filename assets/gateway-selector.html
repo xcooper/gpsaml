@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Select Gateway</title>
+  <style>
+    body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 18px; background:#f8f9fa; }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    label { display:block; font-weight:600; margin-bottom:4px; }
+    select { width:100%; padding:8px; box-sizing:border-box; font-size:14px; border:1px solid #ccc; border-radius:4px; margin-bottom: 14px; }
+    button { padding:8px 16px; font-size:14px; background:#0069d9; color:#fff; border:none; border-radius:4px; cursor:pointer; }
+    button:hover { background:#0053b3; }
+    .gateway-list { list-style: none; padding: 0; margin: 0 0 14px 0; max-height: 150px; overflow-y: auto; border: 1px solid #ccc; background: white; border-radius: 4px; }
+    .gateway-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .gateway-item:last-child { border-bottom: none; }
+    .gateway-item:hover { background-color: #f0f0f0; }
+    .gateway-item.selected { background-color: #e8f0fe; color: #1967d2; }
+  </style>
+</head>
+<body>
+  <h2>Select Gateway</h2>
+  <form id="gatewayForm">
+    <div id="loading">Loading gateways...</div>
+    <div id="selectionArea" style="display:none;">
+      <label for="gatewaySelect">Available Gateways</label>
+      <select id="gatewaySelect" size="5"></select>
+      <button type="submit" id="connectBtn" disabled>Connect</button>
+    </div>
+  </form>
+  <script src="./gateway-selector.js"></script>
+</body>
+</html>

@@ -19,14 +19,181 @@ interface PreloginResponse {
   "saml-request"?: string;
 }
 
+interface GatewayEntry {
+  $: {
+    name: string;
+  };
+  description?: string;
+  fqdn?: string;
+  "priority-rule"?: {
+    entry: {
+      $: {
+        name: string;
+      };
+      priority: string;
+    };
+  };
+  manual: string;
+}
+
+interface Gateways {
+  "cutoff-time": string;
+  external: {
+    list: {
+      entry: GatewayEntry[];
+    };
+  };
+}
+
+interface AgentConfig {
+  "save-user-credentials"?: string;
+  "portal-2fa"?: string;
+  "internal-gateway-2fa"?: string;
+  "auto-discovery-external-gateway-2fa"?: string;
+  "manual-only-gateway-2fa"?: string;
+  "disconnect-reasons"?: string;
+  uninstall?: string;
+  "client-upgrade"?: string;
+  "enable-signout"?: string;
+  "allow-extend-session"?: string;
+  "use-sso-pin"?: string;
+  "use-sso-macos"?: string;
+  "logout-remove-sso"?: string;
+  "krb-auth-fail-fallback"?: string;
+  "default-browser"?: string;
+  "retry-tunnel"?: string;
+  "retry-timeout"?: string;
+  "traffic-enforcement"?: string;
+  "enforce-globalprotect"?: string;
+  "captive-portal-exception-timeout"?: string;
+  "captive-portal-using-default-browser"?: string;
+  "captive-portal-login-url"?: string;
+  "traffic-blocking-notification-delay"?: string;
+  "display-traffic-blocking-notification-msg"?: string;
+  "traffic-blocking-notification-msg"?: string;
+  "allow-traffic-blocking-notification-dismissal"?: string;
+  "display-captive-portal-detection-msg"?: string;
+  "captive-portal-detection-msg"?: string;
+  "captive-portal-notification-delay"?: string;
+  "certificate-store-lookup"?: string;
+  "scep-certificate-renewal-period"?: string;
+  "ext-key-usage-oid-for-client-cert"?: string;
+  "full-chain-cert-verify"?: string;
+  "retain-connection-smartcard-removal"?: string;
+  "user-accept-terms-before-creating-tunnel"?: string;
+  "rediscover-network"?: string;
+  "wifi-to-wired-transition"?: string;
+  "resubmit-host-info"?: string;
+  "intelligent-portal"?: string;
+  "can-continue-if-portal-cert-invalid"?: string;
+  "access-gateway-from-agent-only"?: string;
+  "user-switch-tunnel-rename-timeout"?: string;
+  "pre-logon-tunnel-rename-timeout"?: string;
+  "enable-cache-portal-config-absence-prelogon-tunnel"?: string;
+  "preserve-tunnel-upon-user-logoff-timeout"?: string;
+  "ipsec-failover-ssl"?: string;
+  "display-tunnel-fallback-notification"?: string;
+  "ssl-only-selection"?: string;
+  "tunnel-mtu"?: string;
+  "max-internal-gateway-connection-attempts"?: string;
+  "adv-internal-host-detection"?: string;
+  "delays-internal-host-detection"?: string;
+  "unified-user-id-hybrid-deployment"?: string;
+  "portal-timeout"?: string;
+  "connect-timeout"?: string;
+  "receive-timeout"?: string;
+  "split-tunnel-option"?: string;
+  "split-tunnel-option-mobile"?: string;
+  "advanced-st-public-key"?: string;
+  "enforce-dns"?: string;
+  "append-local-search-domain"?: string;
+  "flush-dns"?: string;
+  "agent-proxy-port"?: string;
+  "agent-proxy-mode"?: string;
+  "auto-proxy-pac"?: string;
+  "proxy-multiple-autodetect"?: string;
+  "use-proxy"?: string;
+  "enable-hip-remediation"?: string;
+  "hip-remediation-retry"?: string;
+  "hip-remediation-integrity-check"?: string;
+  "wsc-autodetect"?: string;
+  "mfa-enabled"?: string;
+  "mfa-listening-port"?: string;
+  "mfa-notification-msg"?: string;
+  "mfa-prompt-suppress-time"?: string;
+  "ipv6-preferred"?: string;
+  "change-password-message"?: string;
+  "measuring-egw-tcp-connection"?: string;
+  "log-gateway"?: string;
+  "cdl-log"?: string;
+  "dem-notification"?: string;
+  "dem-agent"?: string;
+  "dem-agent-action"?: string;
+  "quarantine-add-message"?: string;
+  "quarantine-remove-message"?: string;
+  "allow-disable-cbl"?: string;
+  [key: string]: any;
+}
+
+interface AgentUi {
+  "can-save-password"?: string;
+  "agent-user-override-timeout"?: string;
+  "max-agent-user-overrides"?: string;
+  "welcome-page"?: {
+    display: string;
+    page: string;
+  };
+  "help-page"?: string;
+  "help-page-2"?: string;
+  "agent-user-override"?: string;
+  "enable-advanced-view"?: string;
+  "enable-do-not-display-this-welcome-page-again"?: string;
+  "can-change-portal"?: string;
+  "show-agent-icon"?: string;
+  "password-expiry-message"?: string;
+  "init-panel"?: string;
+  "user-input-on-top"?: string;
+  [key: string]: any;
+}
+
+interface HipCollection {
+  "hip-report-interval"?: string;
+  "max-wait-time"?: string;
+  "collect-hip-data"?: string;
+  default?: {
+    category: {
+      member: string[];
+    };
+  };
+  "exclusion-v4"?: any;
+  "custom-checks"?: any;
+  [key: string]: any;
+}
+
 interface PortalConfig {
-  policy?: {
+  policy: {
+    "agent-user-override-key"?: string;
+    "portal-name"?: string;
+    "portal-config-version"?: string;
+    version?: string;
+    "client-role"?: string;
+    gateways?: Gateways;
+    "gateways-v6"?: Gateways;
+    "agent-config"?: AgentConfig;
+    "use-sso"?: string;
+    "connect-method"?: string;
+    "on-demand"?: string;
+    "refresh-config"?: string;
+    "refresh-config-interval"?: string;
+    "agent-ui"?: AgentUi;
+    "hip-collection"?: HipCollection;
     "portal-userauthcookie"?: string;
-    "user-email"?: string;
+    "portal-prelogonuserauthcookie"?: string;
     "portal-preloginuserauthcookie"?: string;
+    "config-digest"?: string;
+    "user-email"?: string;
     [key: string]: any;
   };
-  [key: string]: any;
 }
 
 interface PortalAuthResult {
@@ -34,6 +201,7 @@ interface PortalAuthResult {
   portalUserAuthCookie: string;
   portalPreloginUserAuthCookie: string;
   userEmail: string;
+  gateways: string[];
 }
 
 interface GatewayLoginResponse {
@@ -80,6 +248,7 @@ class Portal extends NetworkEndpoint {
   private portalUserAuthCookie?: string;
   private userEmail?: string;
   private portalPreloginUserAuthCookie?: string;
+  private gateways?: string[] | null;
 
   constructor(hostname: string) {
     super();
@@ -89,6 +258,7 @@ class Portal extends NetworkEndpoint {
     this.preloginCookie = null;
     this.preloginSuccess = false;
     this.samlRequest = null;
+    this.gateways = null;
   }
 
   doPrelogin(): Promise<boolean> {
@@ -186,12 +356,15 @@ class Portal extends NetworkEndpoint {
                 this.userEmail = this.policy?.["user-email"];
                 this.portalPreloginUserAuthCookie =
                   this.policy?.["portal-preloginuserauthcookie"];
+                this.gateways =
+                  this.policy?.gateways?.map((g: any) => g.hostname) ?? [];
                 resolve({
                   userName: this.samlUsername as string,
                   portalUserAuthCookie: this.portalUserAuthCookie!,
                   portalPreloginUserAuthCookie:
                     this.portalPreloginUserAuthCookie!,
                   userEmail: this.userEmail!,
+                  gateways: this.gateways!,
                 });
               } else {
                 reject(resp.statusMessage);

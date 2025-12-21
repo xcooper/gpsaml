@@ -4,6 +4,7 @@ import { Gateway, Portal } from "./endpoints";
 import { connectVpn } from "./openconnect";
 import * as log from "loglevel";
 import { createHostWindow } from "./vpn-host-window";
+import { createGatewaySelectionWindow } from "./gateway-selection-window";
 
 // Disable GPU to avoid crashes in headless/server environments
 app.disableHardwareAcceleration();
@@ -17,9 +18,11 @@ async function enterEntryPoint(): Promise<void> {
     await portal.doPrelogin();
     await portal.doSamlAuth();
     const policy = await portal.getConfig();
+    const gateways = policy.gateways;
+    const selGateway = await createGatewaySelectionWindow(gateways);
     const fingerprint = portal.fingerprint;
     const gateway = new Gateway(
-      "taiwan-vpn.commscope.com",
+      selGateway,
       policy.portalUserAuthCookie,
       policy.userName,
     );

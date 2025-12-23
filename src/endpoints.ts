@@ -244,7 +244,6 @@ class Portal extends NetworkEndpoint {
   private preloginSuccess: boolean;
   private samlRequest: string | null;
   private config?: PortalConfig;
-  private policy?: any;
   private portalUserAuthCookie?: string;
   private userEmail?: string;
   private portalPreloginUserAuthCookie?: string;
@@ -350,14 +349,14 @@ class Portal extends NetworkEndpoint {
                   JSON.stringify(this.config, null, 2),
                 );
                 // pass [username, password, portalUserAuthCookie] to gateway
-                this.policy = this.config.policy;
-                this.portalUserAuthCookie =
-                  this.policy?.["portal-userauthcookie"];
-                this.userEmail = this.policy?.["user-email"];
+                const policy = this.config.policy;
+                this.portalUserAuthCookie = policy?.["portal-userauthcookie"];
+                this.userEmail = policy?.["user-email"];
                 this.portalPreloginUserAuthCookie =
-                  this.policy?.["portal-preloginuserauthcookie"];
-                this.gateways =
-                  this.policy?.gateways?.map((g: any) => g.hostname) ?? [];
+                  policy?.["portal-preloginuserauthcookie"];
+                this.gateways = policy?.gateways?.external?.list?.entry?.map(
+                  (e) => e["$"]?.name,
+                );
                 resolve({
                   userName: this.samlUsername as string,
                   portalUserAuthCookie: this.portalUserAuthCookie!,

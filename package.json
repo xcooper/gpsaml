@@ -40,6 +40,7 @@
     ]
   },
   "dependencies": {
+    "@expo/sudo-prompt": "^9.3.2",
     "got": "^11.8.6",
     "loglevel": "^1.9.2",
     "xml2js": "^0.6.2",

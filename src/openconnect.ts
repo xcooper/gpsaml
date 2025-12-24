@@ -1,7 +1,6 @@
 import { userAgent } from "./consts";
 import { URLSearchParams } from "url";
-import { exec } from "child_process";
-import * as log from "loglevel";
+import { exec } from "@expo/sudo-prompt";
 
 interface LoginResponse {
   domain: string;
@@ -16,10 +15,14 @@ function connectVpn(
   hostname: string,
 ): void {
   const cookie = new URLSearchParams(loginResp as Record<string, string>);
-  const proc = exec(
+  exec(
     // should handle differently on different OS, this is on Windows.
-    `sudo openconnect --dump-http-traffic --protocol=gp -u ${loginResp.domain}\\${samlUsername} --os=linux --version-string="Ubuntu Linux" --useragent="${userAgent}" --cookie="${cookie.toString()}" --servercert ${fingerprint} ${hostname}`,
-    (error, stdout, stderr) => {
+    `openconnect --dump-http-traffic --protocol=gp -u ${loginResp.domain}\\${samlUsername} --os=linux --version-string="Ubuntu Linux" --useragent="${userAgent}" --cookie="${cookie.toString()}" --servercert ${fingerprint} ${hostname}`,
+    (
+      error?: Error | null,
+      stdout?: string | Buffer,
+      stderr?: string | Buffer,
+    ) => {
       if (error) {
         throw error;
       }

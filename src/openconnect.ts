@@ -16,8 +16,10 @@ function connectVpn(
 ): void {
   const cookie = new URLSearchParams(loginResp as Record<string, string>);
   exec(
-    // should handle differently on different OS, this is on Windows.
     `openconnect --dump-http-traffic --protocol=gp -u ${loginResp.domain}\\${samlUsername} --os=linux --version-string="Ubuntu Linux" --useragent="${userAgent}" --cookie="${cookie.toString()}" --servercert ${fingerprint} ${hostname}`,
+    {
+      name: "openconnect",
+    },
     (
       error?: Error | null,
       stdout?: string | Buffer,

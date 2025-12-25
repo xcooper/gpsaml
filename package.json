@@ -22,15 +22,15 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "@types/node": "^24.9.1",
+    "@types/node": "^25.0.3",
     "@types/xml2js": "^0.4.14",
     "@types/yargs": "^17.0.35",
-    "electron": "^38.4.0",
+    "electron": "^39.2.7",
     "electron-packager": "^17.1.2",
-    "husky": "^9.1.6",
+    "husky": "^9.1.7",
     "jshint": "^2.13.6",
-    "lint-staged": "^15.2.10",
-    "prettier": "^3.3.3",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },

@@ -52,14 +52,10 @@ function relaunchAsRoot() {
 
   let command = "";
   if (process.platform === "win32") {
-    // Windows: Use 'cmd /c start' to launch and detach immediately
     command = `cmd /c start "" "${process.execPath}" ${args}`;
   } else {
-    // POSIX: Use setsid to try and detach, or just run normally.
-    // 'sudo-prompt' will still wait for execution to finish on POSIX usually.
-    // We retain the standard behavior but drop the output logs.
     const cwd = process.cwd();
-    command = `cd "${cwd.replace(/"/g, '\\"')}" && "${process.execPath}" ${args}`;
+    command = `cd "${cwd.replace(/"/g, '\\"')}" && "${process.execPath}" --no-sandbox ${args} & disown`;
   }
 
   const options = {
@@ -94,6 +90,15 @@ const bootstrap = async () => {
       vpnProcess.kill();
       vpnProcess = null;
     }
+  });
+
+  process.on("SIGTERM", () => {
+    if (vpnProcess) {
+      console.log("Terminating VPN process on SIGTERM...");
+      vpnProcess.kill();
+      vpnProcess = null;
+    }
+    process.exit(0);
   });
 
   await app.whenReady();

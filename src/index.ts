@@ -55,7 +55,7 @@ function relaunchAsRoot() {
     command = `cmd /c start "" "${process.execPath}" ${args}`;
   } else {
     const cwd = process.cwd();
-    command = `cd "${cwd.replace(/"/g, '\\"')}" && "${process.execPath}" --no-sandbox ${args} & disown`;
+    command = `cd "${cwd.replace(/"/g, '\\"')}" && "${process.execPath}" --disable-gpu --no-sandbox ${args} & disown`;
   }
 
   const options = {

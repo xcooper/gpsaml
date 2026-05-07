@@ -1,12 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  Menu,
-  Tray,
-  dialog,
-  ipcMain,
-  nativeImage,
-} from "electron";
+import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from "electron";
 import { opts } from "./cli";
 import isElevated from "is-elevated";
 import sudo from "@expo/sudo-prompt";
@@ -132,14 +124,29 @@ function createTray(): void {
 }
 
 async function enterEntryPoint(): Promise<void> {
+  // Retry the portal handshake (where DNS / prelogin / SAML errors live)
+  // inline in the host window so a typo in the hostname becomes a red
+  // banner instead of a silent close.
+  const hostWindow = await createHostWindow();
+  let portal: Portal;
+  while (true) {
+    const hostname = await hostWindow.awaitSubmit();
+    try {
+      portal = new Portal(hostname);
+      await portal.doPrelogin();
+      break;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      log.warn(`prelogin failed: ${msg}`);
+      hostWindow.showError(msg);
+    }
+  }
+
   try {
-    const hostname = await createHostWindow();
-    const portal = new Portal(hostname);
-    await portal.doPrelogin();
     await portal.doSamlAuth();
     const policy = await portal.getConfig();
-    const gateways = policy.gateways;
-    const selGateway = await createGatewaySelectionWindow(gateways);
+    hostWindow.close();
+    const selGateway = await createGatewaySelectionWindow(policy.gateways);
     const fingerprint = portal.fingerprint;
     const gateway = new Gateway(
       selGateway,
@@ -167,17 +174,10 @@ async function enterEntryPoint(): Promise<void> {
     statusWindow = null;
     app.quit();
   } catch (e) {
-    console.error("login failed.", e);
-    const detail = e instanceof Error ? e.stack || e.message : String(e);
-    await dialog.showMessageBox({
-      type: "error",
-      title: "gpsaml",
-      message: "Connection failed",
-      detail,
-      buttons: ["Quit"],
-      defaultId: 0,
-    });
-    app.quit();
+    log.error("login flow failed:", e);
+    // No modal dialog and no quit — the tray remains so the user can
+    // see the failure in /tmp/gpsaml.log and quit on their own time.
+    hostWindow.close();
   }
 }
 

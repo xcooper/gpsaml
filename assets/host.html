@@ -148,6 +148,47 @@
     .field::placeholder { color: var(--text-faint); }
     .field:disabled { color: var(--text-dim); cursor: progress; }
 
+    /* === error banner === */
+    .error-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(215, 38, 56, 0.08);
+      border: 1px solid rgba(215, 38, 56, 0.32);
+      border-left-width: 3px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--alert);
+      word-break: break-word;
+      animation: shake 0.32s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+    .error-banner[hidden] { display: none; }
+    .error-banner::before {
+      content: '!';
+      flex: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--alert);
+      color: var(--surface);
+      font-weight: 700;
+      font-family: var(--font-display);
+      font-size: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      margin-top: 1px;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-1px); }
+      20%, 80% { transform: translateX(2px); }
+      30%, 50%, 70% { transform: translateX(-3px); }
+      40%, 60% { transform: translateX(3px); }
+    }
+
     /* === actions === */
     .actions {
       display: flex; justify-content: space-between; align-items: center;
@@ -228,6 +269,8 @@
                autocomplete="off" autocapitalize="off"
                spellcheck="false" autofocus required />
       </div>
+
+      <div class="error-banner" id="errorBanner" hidden role="alert"></div>
 
       <div class="actions">
         <div class="hint">press <kbd>↵</kbd> to authenticate</div>

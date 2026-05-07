@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from "electron";
 import { opts } from "./cli";
 import isElevated from "is-elevated";
 import sudo from "@expo/sudo-prompt";
@@ -7,7 +7,13 @@ import { connectVpn } from "./openconnect";
 import * as log from "loglevel";
 import { createHostWindow } from "./vpn-host-window";
 import { createGatewaySelectionWindow } from "./gateway-selection-window";
+import {
+  createConnectionStatusWindow,
+  StatusWindowHandle,
+} from "./connection-status-window";
+import { loadResource } from "./resource";
 import { ChildProcess } from "child_process";
+import { existsSync } from "fs";
 
 // Disable GPU to avoid crashes in headless/server environments
 app.disableHardwareAcceleration();
@@ -15,6 +21,107 @@ app.disableHardwareAcceleration();
 log.setDefaultLevel("debug");
 
 let vpnProcess: ChildProcess | null = null;
+let tray: Tray | null = null;
+let statusWindow: StatusWindowHandle | null = null;
+let trayAnimTimer: NodeJS.Timeout | null = null;
+
+// 4-frame walking-dog silhouette for the menu-bar tray. Loaded as macOS
+// template images so the OS recolors them for light/dark menu bars.
+// Frames are pre-rendered to @2x PNGs at build time (assets/tray/) and
+// cycle on a setInterval similar to apps like Runcat.
+function loadDogFrames(): Electron.NativeImage[] {
+  const out: Electron.NativeImage[] = [];
+  for (let i = 0; i < 4; i++) {
+    const file = loadResource(`tray/tray-dog-${i}@2x.png`);
+    if (!existsSync(file)) return [];
+    const img = nativeImage.createFromPath(file);
+    if (img.isEmpty()) return [];
+    img.setTemplateImage(true);
+    out.push(img);
+  }
+  return out;
+}
+
+function startTrayAnimation(frames: Electron.NativeImage[]): void {
+  if (!tray || frames.length === 0) return;
+  let i = 0;
+  tray.setImage(frames[0]);
+  trayAnimTimer = setInterval(() => {
+    if (!tray || tray.isDestroyed()) {
+      stopTrayAnimation();
+      return;
+    }
+    i = (i + 1) % frames.length;
+    tray.setImage(frames[i]);
+  }, 200);
+}
+
+function stopTrayAnimation(): void {
+  if (trayAnimTimer) {
+    clearInterval(trayAnimTimer);
+    trayAnimTimer = null;
+  }
+}
+
+function createTray(): void {
+  // Try the animated walking-dog silhouette first (Runcat style). If SVG
+  // rendering through nativeImage isn't supported on this Electron build
+  // we fall back to a plain 🦮 emoji title (still cute, just static).
+  const frames = loadDogFrames();
+  if (frames.length > 0) {
+    tray = new Tray(frames[0]);
+    startTrayAnimation(frames);
+  } else {
+    tray = new Tray(nativeImage.createEmpty());
+    tray.setTitle("🦮");
+  }
+  tray.setToolTip("gpsaml");
+
+  const showWindow = () => {
+    // Prefer the connection-status window when it exists (it stays around for
+    // the lifetime of the tunnel and may be hidden). Fall back to whichever
+    // BrowserWindow is currently open (host or gateway selector).
+    if (statusWindow) {
+      statusWindow.show();
+      return;
+    }
+    const wins = BrowserWindow.getAllWindows();
+    if (wins.length === 0) return;
+    const target = wins[wins.length - 1];
+    if (target.isMinimized()) target.restore();
+    target.show();
+    target.focus();
+  };
+
+  const menu = Menu.buildFromTemplate([
+    { label: "gpsaml", enabled: false },
+    { type: "separator" },
+    { label: "Show window", click: showWindow },
+    {
+      label: "Disconnect",
+      click: () => {
+        if (vpnProcess && vpnProcess.exitCode === null) {
+          vpnProcess.kill();
+        }
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Quit gpsaml",
+      accelerator: "Cmd+Q",
+      click: () => {
+        if (vpnProcess && vpnProcess.exitCode === null) vpnProcess.kill();
+        vpnProcess = null;
+        app.quit();
+      },
+    },
+  ]);
+  tray.setContextMenu(menu);
+
+  // Left-click the menu-bar icon: bring the window back. Right-click still
+  // shows the context menu (Electron handles that automatically on macOS).
+  tray.on("click", showWindow);
+}
 
 async function enterEntryPoint(): Promise<void> {
   try {
@@ -38,6 +145,19 @@ async function enterEntryPoint(): Promise<void> {
       fingerprint!,
       gateway.hostname,
     );
+
+    statusWindow = await createConnectionStatusWindow(gateway.hostname);
+    vpnProcess.on("close", () => {
+      statusWindow?.notifyDisconnected();
+    });
+    await statusWindow.awaitDisconnect;
+    if (vpnProcess && vpnProcess.exitCode === null) {
+      vpnProcess.kill();
+    }
+    vpnProcess = null;
+    statusWindow.close();
+    statusWindow = null;
+    app.quit();
   } catch (e) {
     console.error("login failed.", e);
   }
@@ -54,8 +174,15 @@ function relaunchAsRoot() {
   if (process.platform === "win32") {
     command = `cmd /c start "" "${process.execPath}" ${args}`;
   } else {
+    // sudo-prompt detaches the elevated process from our stdio, so without
+    // redirection any console.log / console.error after relaunch is lost.
+    // Tee everything to a log file so users can attach it when reporting bugs.
     const cwd = process.cwd();
-    command = `cd "${cwd.replace(/"/g, '\\"')}" && "${process.execPath}" --disable-gpu --no-sandbox ${args} & disown`;
+    const logPath = (process.env.GPSAML_LOG || "/tmp/gpsaml.log").replace(
+      /"/g,
+      '\\"',
+    );
+    command = `cd "${cwd.replace(/"/g, '\\"')}" && "${process.execPath}" --disable-gpu --no-sandbox ${args} > "${logPath}" 2>&1 & disown`;
   }
 
   const options = {
@@ -85,6 +212,7 @@ const bootstrap = async () => {
   });
 
   app.on("will-quit", () => {
+    stopTrayAnimation();
     if (vpnProcess) {
       console.log("Terminating VPN process...");
       vpnProcess.kill();
@@ -102,6 +230,8 @@ const bootstrap = async () => {
   });
 
   await app.whenReady();
+
+  createTray();
 
   app.on("activate", async () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -4,8 +4,8 @@ import { loadResource } from "./resource";
 
 async function createHostWindow(): Promise<string> {
   const win = new BrowserWindow({
-    width: 420,
-    height: 220,
+    width: 460,
+    height: 280,
     resizable: false,
     webPreferences: {
       nodeIntegration: true,

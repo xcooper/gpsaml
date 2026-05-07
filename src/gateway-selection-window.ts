@@ -5,8 +5,8 @@ async function createGatewaySelectionWindow(
   gateways: string[] | any[],
 ): Promise<string> {
   const win = new BrowserWindow({
-    width: 420,
-    height: 300,
+    width: 460,
+    height: 440,
     resizable: false,
     webPreferences: {
       nodeIntegration: true,

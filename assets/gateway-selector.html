@@ -1,32 +1,282 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Select Gateway</title>
+  <title>gpsaml — gateways</title>
   <style>
-    body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 18px; background:#f8f9fa; }
-    h2 { margin: 0 0 12px; font-size: 18px; }
-    label { display:block; font-weight:600; margin-bottom:4px; }
-    select { width:100%; padding:8px; box-sizing:border-box; font-size:14px; border:1px solid #ccc; border-radius:4px; margin-bottom: 14px; }
-    button { padding:8px 16px; font-size:14px; background:#0069d9; color:#fff; border:none; border-radius:4px; cursor:pointer; }
-    button:hover { background:#0053b3; }
-    .gateway-list { list-style: none; padding: 0; margin: 0 0 14px 0; max-height: 150px; overflow-y: auto; border: 1px solid #ccc; background: white; border-radius: 4px; }
-    .gateway-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; }
-    .gateway-item:last-child { border-bottom: none; }
-    .gateway-item:hover { background-color: #f0f0f0; }
-    .gateway-item.selected { background-color: #e8f0fe; color: #1967d2; }
+    :root {
+      --bg: #FAF9F7;
+      --surface: #FFFFFF;
+      --border: #ECE8E1;
+      --border-strong: #1A1A1A;
+      --text: #0E0E10;
+      --text-dim: #6B6660;
+      --text-faint: #A8A29A;
+      --orange: #F58025;
+      --orange-deep: #D66B14;
+      --orange-soft: rgba(245, 128, 37, 0.18);
+      --orange-glow: rgba(245, 128, 37, 0.32);
+      --alert: #D72638;
+      --shadow: 0 1px 0 rgba(20, 16, 10, 0.04), 0 6px 16px rgba(20, 16, 10, 0.05);
+
+      --font-display: -apple-system, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+      --font-text: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "Menlo", "Monaco", monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-text);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      user-select: none; -webkit-user-select: none;
+      cursor: default;
+      display: flex; flex-direction: column;
+    }
+
+    .status-bar {
+      flex: none;
+      display: flex; align-items: center; gap: 8px;
+      height: 30px; padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+    }
+    .status-bar .pup { font-size: 13px; filter: saturate(1.05); }
+    .status-bar .brand {
+      color: var(--text); font-weight: 600; letter-spacing: 0.02em;
+      font-family: var(--font-display); font-size: 11px;
+    }
+    .status-bar .sep { color: var(--text-faint); }
+    .status-bar .spacer { flex: 1; }
+    .status-bar .indicator { display: flex; align-items: center; gap: 6px; }
+    .status-bar .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 2px var(--orange-soft);
+      animation: blink-led 1.4s ease-in-out infinite;
+    }
+    @keyframes blink-led { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    main {
+      flex: 1;
+      padding: 24px 24px 22px;
+      display: flex; flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .kicker::before {
+      content: ''; width: 18px; height: 2px; background: var(--orange);
+    }
+
+    .title {
+      font-family: var(--font-display);
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin: 4px 0 0; line-height: 1;
+    }
+    .title em { font-style: normal; color: var(--orange); }
+
+    /* === list === */
+    form {
+      flex: 1; display: flex; flex-direction: column;
+      gap: 14px; min-height: 0;
+    }
+    .list-shell {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .list-meta {
+      flex: none;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      background: rgba(0,0,0,0.015);
+      border-bottom: 1px solid var(--border);
+    }
+    .list-meta .count { color: var(--orange); font-weight: 600; }
+
+    .gateway-list {
+      list-style: none; padding: 4px; margin: 0;
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+    }
+    .gateway-list::-webkit-scrollbar { width: 8px; }
+    .gateway-list::-webkit-scrollbar-track { background: transparent; }
+    .gateway-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+      border: 2px solid var(--surface);
+    }
+    .gateway-list::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+    .gateway-item {
+      display: flex; align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text);
+    }
+    .gateway-item .marker {
+      flex: none; width: 10px;
+      color: var(--text-faint);
+      transition: color 0.12s ease;
+      font-size: 10px;
+    }
+    .gateway-item .name {
+      flex: 1;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+    .gateway-item .desc {
+      color: var(--text-dim);
+      font-size: 11px;
+      font-family: var(--font-text);
+    }
+    .gateway-item:hover {
+      background: rgba(245, 128, 37, 0.06);
+    }
+    .gateway-item:hover .marker { color: var(--orange-deep); }
+    .gateway-item.selected {
+      background: var(--text);
+      color: var(--surface);
+    }
+    .gateway-item.selected .marker { color: var(--orange); }
+    .gateway-item.selected .desc { color: rgba(255,255,255,0.6); }
+    .gateway-item.selected::after {
+      content: '●'; color: var(--orange); margin-left: 6px; font-size: 8px;
+    }
+    .gateway-item.empty {
+      color: var(--text-faint);
+      cursor: default; justify-content: center;
+      font-style: italic;
+    }
+    .gateway-item.empty:hover { background: transparent; }
+
+    .loading {
+      flex: 1; min-height: 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+    .loading .spinner {
+      width: 14px; height: 14px;
+      border: 1.5px solid var(--border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .hint {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--text-faint); letter-spacing: 0.02em;
+    }
+    .hint kbd {
+      display: inline-block; padding: 1px 5px;
+      border: 1px solid var(--border); border-bottom-width: 2px;
+      border-radius: 3px;
+      background: var(--surface);
+      color: var(--text-dim);
+      font-family: var(--font-mono); font-size: 10px;
+    }
+
+    .btn {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--text);
+      color: var(--surface);
+      border: 1.5px solid var(--text);
+      border-radius: 6px;
+      padding: 9px 18px;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 0 var(--text);
+    }
+    .btn:hover {
+      background: var(--orange); border-color: var(--orange);
+      box-shadow: 0 2px 0 var(--orange-deep);
+    }
+    .btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--text); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
   </style>
 </head>
 <body>
-  <h2>Select Gateway</h2>
-  <form id="gatewayForm">
-    <div id="loading">Loading gateways...</div>
-    <div id="selectionArea" style="display:none;">
-      <label for="gatewaySelect">Available Gateways</label>
-      <select id="gatewaySelect" size="5"></select>
-      <button type="submit" id="connectBtn" disabled>Connect</button>
+  <header class="status-bar">
+    <span class="pup" aria-hidden="true">🦮</span>
+    <span class="brand">gpsaml</span>
+    <span class="sep">·</span>
+    <span>step 02 / 03 — gateway</span>
+    <span class="spacer"></span>
+    <span class="indicator"><span class="led"></span><span>negotiating</span></span>
+  </header>
+
+  <main>
+    <div>
+      <div class="kicker">tunnel selection</div>
+      <h1 class="title">choose <em>gateway</em></h1>
     </div>
-  </form>
+
+    <form id="gatewayForm">
+      <div class="list-shell">
+        <div class="list-meta" id="listMeta" hidden>
+          <span>endpoint</span>
+          <span><span class="count" id="countNum">0</span> available</span>
+        </div>
+        <div class="loading" id="loading">
+          <span class="spinner"></span>
+          <span>scanning portal</span>
+        </div>
+        <ul class="gateway-list" id="gatewayList" hidden></ul>
+      </div>
+
+      <div class="actions">
+        <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> to move · <kbd>↵</kbd> to connect</div>
+        <button type="submit" id="connectBtn" class="btn" disabled>connect</button>
+      </div>
+    </form>
+  </main>
+
   <script src="./gateway-selector.js"></script>
 </body>
 </html>

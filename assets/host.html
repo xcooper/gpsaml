@@ -1,24 +1,241 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>VPN Host</title>
+  <title>gpsaml — portal</title>
   <style>
-    body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 18px; background:#f8f9fa; }
-    h2 { margin: 0 0 12px; font-size: 18px; }
-    label { display:block; font-weight:600; margin-bottom:4px; }
-    input[type=text] { width:100%; padding:8px; box-sizing:border-box; font-size:14px; border:1px solid #ccc; border-radius:4px; }
-    button { margin-top:14px; padding:8px 16px; font-size:14px; background:#0069d9; color:#fff; border:none; border-radius:4px; cursor:pointer; }
-    button:hover { background:#0053b3; }
+    /* === shared theme (kept in sync across all windows) === */
+    :root {
+      --bg: #FAF9F7;
+      --surface: #FFFFFF;
+      --border: #ECE8E1;
+      --border-strong: #1A1A1A;
+      --text: #0E0E10;
+      --text-dim: #6B6660;
+      --text-faint: #A8A29A;
+      --orange: #F58025;
+      --orange-deep: #D66B14;
+      --orange-soft: rgba(245, 128, 37, 0.18);
+      --orange-glow: rgba(245, 128, 37, 0.32);
+      --alert: #D72638;
+      --shadow: 0 1px 0 rgba(20, 16, 10, 0.04), 0 6px 16px rgba(20, 16, 10, 0.05);
+
+      --font-display: -apple-system, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+      --font-text: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "Menlo", "Monaco", monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-text);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow: hidden;
+      user-select: none; -webkit-user-select: none;
+      cursor: default;
+      display: flex; flex-direction: column;
+    }
+
+    /* === status bar === */
+    .status-bar {
+      flex: none;
+      display: flex; align-items: center; gap: 8px;
+      height: 30px; padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+    }
+    .status-bar .pup {
+      font-size: 13px;
+      filter: saturate(1.05);
+    }
+    .status-bar .brand {
+      color: var(--text);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      font-family: var(--font-display);
+      font-size: 11px;
+    }
+    .status-bar .sep { color: var(--text-faint); }
+    .status-bar .step { color: var(--text-dim); }
+    .status-bar .spacer { flex: 1; }
+    .status-bar .indicator { display: flex; align-items: center; gap: 6px; }
+    .status-bar .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 2px var(--orange-soft);
+    }
+
+    /* === main === */
+    main {
+      flex: 1;
+      padding: 26px 24px 22px;
+      display: flex; flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .kicker::before {
+      content: ''; width: 18px; height: 2px;
+      background: var(--orange);
+    }
+
+    .title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin: 4px 0 0;
+      line-height: 1;
+    }
+    .title em {
+      font-style: normal;
+      color: var(--orange);
+      font-weight: 800;
+    }
+
+    /* === form === */
+    form { flex: 1; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+    .field-wrap {
+      position: relative;
+      display: flex; align-items: center;
+      gap: 10px;
+      padding: 0;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      overflow: hidden;
+    }
+    .field-wrap:focus-within {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 4px var(--orange-soft);
+    }
+    .field-prompt {
+      flex: none;
+      padding: 0 0 0 14px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--orange);
+      font-weight: 600;
+    }
+    .field {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      outline: none;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text);
+      caret-color: var(--orange);
+      padding: 11px 14px 11px 6px;
+    }
+    .field::placeholder { color: var(--text-faint); }
+    .field:disabled { color: var(--text-dim); cursor: progress; }
+
+    /* === actions === */
+    .actions {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: auto;
+      gap: 10px;
+    }
+    .hint {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.02em;
+    }
+    .hint kbd {
+      display: inline-block;
+      padding: 1px 5px;
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      border-radius: 3px;
+      background: var(--surface);
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    .btn {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--text);
+      color: var(--surface);
+      border: 1.5px solid var(--text);
+      border-radius: 6px;
+      padding: 9px 18px;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 0 var(--text);
+    }
+    .btn:hover {
+      background: var(--orange);
+      border-color: var(--orange);
+      box-shadow: 0 2px 0 var(--orange-deep);
+    }
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 var(--text);
+    }
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
-  <h2>Connect to VPN</h2>
-  <form id="hostForm">
-    <label for="host">VPN Host</label>
-    <input id="host" name="host" type="text" placeholder="example.vpn.com" autofocus required />
-    <button type="submit">Connect</button>
-  </form>
+  <header class="status-bar">
+    <span class="pup" aria-hidden="true">🦮</span>
+    <span class="brand">gpsaml</span>
+    <span class="sep">·</span>
+    <span class="step">step 01 / 03 — portal</span>
+    <span class="spacer"></span>
+    <span class="indicator"><span class="led"></span><span>idle</span></span>
+  </header>
+
+  <main>
+    <div>
+      <div class="kicker">portal authentication</div>
+      <h1 class="title">connect <em>·</em></h1>
+    </div>
+
+    <form id="hostForm">
+      <div class="field-wrap">
+        <span class="field-prompt">→</span>
+        <input id="host" name="host" type="text"
+               class="field"
+               placeholder="vpn.example.com"
+               autocomplete="off" autocapitalize="off"
+               spellcheck="false" autofocus required />
+      </div>
+
+      <div class="actions">
+        <div class="hint">press <kbd>↵</kbd> to authenticate</div>
+        <button type="submit" class="btn">authenticate</button>
+      </div>
+    </form>
+  </main>
+
   <script src="./host.js"></script>
 </body>
 </html>

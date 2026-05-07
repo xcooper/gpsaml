@@ -1,4 +1,12 @@
-import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  dialog,
+  ipcMain,
+  nativeImage,
+} from "electron";
 import { opts } from "./cli";
 import isElevated from "is-elevated";
 import sudo from "@expo/sudo-prompt";
@@ -160,6 +168,16 @@ async function enterEntryPoint(): Promise<void> {
     app.quit();
   } catch (e) {
     console.error("login failed.", e);
+    const detail = e instanceof Error ? e.stack || e.message : String(e);
+    await dialog.showMessageBox({
+      type: "error",
+      title: "gpsaml",
+      message: "Connection failed",
+      detail,
+      buttons: ["Quit"],
+      defaultId: 0,
+    });
+    app.quit();
   }
 }
 
@@ -230,6 +248,47 @@ const bootstrap = async () => {
   });
 
   await app.whenReady();
+
+  // Install a minimal application menu so the system-standard editing
+  // shortcuts (Cmd+C/V/X/A, Undo/Redo) work in our text inputs. Without
+  // an explicit menu, Electron uses the default which enables the same
+  // bindings — but BrowserWindow.setMenuBarVisibility(false) on each
+  // window has been observed to suppress them on macOS, so we set the
+  // template explicitly here.
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: app.name,
+        submenu: [
+          { role: "about" },
+          { type: "separator" },
+          { role: "hide" },
+          { role: "hideOthers" },
+          { role: "unhide" },
+          { type: "separator" },
+          { role: "quit" },
+        ],
+      },
+      {
+        label: "Edit",
+        submenu: [
+          { role: "undo" },
+          { role: "redo" },
+          { type: "separator" },
+          { role: "cut" },
+          { role: "copy" },
+          { role: "paste" },
+          { role: "pasteAndMatchStyle" },
+          { role: "delete" },
+          { role: "selectAll" },
+        ],
+      },
+      {
+        label: "Window",
+        submenu: [{ role: "minimize" }, { role: "close" }],
+      },
+    ]),
+  );
 
   createTray();
 

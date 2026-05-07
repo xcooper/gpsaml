@@ -16,6 +16,7 @@
     "dev": "tsc && electron dist",
     "package": "npm run build && electron-packager . gpsaml --platform=linux --arch=x64 --out=release --overwrite --prune=true",
     "package:win": "npm run build && electron-packager . gpsaml --platform=win32 --arch=x64 --out=release --overwrite --prune=true --no-deref-symlinks",
+    "package:mac": "npm run build && electron-packager . gpsaml --platform=darwin --arch=arm64 --out=release --overwrite --prune=true",
     "package:all": "npm run build && electron-packager . gpsaml --all --out=release --overwrite --prune=true",
     "prepare": "husky",
     "typecheck": "tsc -p tsconfig.json --noEmit",

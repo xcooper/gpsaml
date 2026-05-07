@@ -95,6 +95,17 @@ function waitForVpnExit(proc: ChildProcess, timeoutMs = 5000): Promise<void> {
   });
 }
 
+// True when the kernel's IPv4 default route already points at a usable
+// physical interface (en*). When this is the case we don't need to touch
+// the DHCP daemon — just dropping the dead utun route is enough.
+function hasUsableDefaultRoute(): boolean {
+  const r = spawnSync("/sbin/route", ["-n", "get", "default"], {
+    encoding: "utf8",
+  });
+  if (r.status !== 0) return false;
+  return /interface:\s*en\d+/.test(r.stdout || "");
+}
+
 // Best-effort recovery from a botched openconnect teardown on macOS.
 // The bundled vpnc-script often leaves either (a) the kernel default
 // route still pointing at a now-dead utun gateway, or (b) the system
@@ -105,6 +116,8 @@ function cleanupAfterDisconnect(): void {
   if (process.platform !== "darwin") return;
 
   // Drop any default routes still pointing at a torn-down VPN tunnel.
+  // The previous physical default that vpnc-script saved is usually
+  // still in the routing table just below the dead one.
   try {
     const netstat = spawnSync("/usr/sbin/netstat", ["-rn", "-f", "inet"], {
       encoding: "utf8",
@@ -124,23 +137,23 @@ function cleanupAfterDisconnect(): void {
     /* best-effort */
   }
 
-  // Force DHCP renewal on each physical interface. This reinstalls the
-  // original default route, DNS servers and search domains in one shot —
-  // equivalent in effect to toggling Wi-Fi off/on but without dropping
-  // the link layer.
-  try {
-    const r = spawnSync("/sbin/ifconfig", ["-l"], { encoding: "utf8" });
-    for (const iface of (r.stdout || "").trim().split(/\s+/)) {
-      if (!/^en\d+$/.test(iface)) continue;
-      spawnSync("/usr/sbin/ipconfig", ["set", iface, "BOOTP"], {
-        stdio: "ignore",
-      });
-      spawnSync("/usr/sbin/ipconfig", ["set", iface, "DHCP"], {
-        stdio: "ignore",
-      });
+  // If after deleting dead VPN routes the kernel still has a working
+  // default, the routing table is fine. Skip DHCP renewal — it would
+  // briefly drop the lease and confuse macOS' captive-network check
+  // (it would show "No Internet Connection" until the next probe).
+  // Only force renewal when the table has no usable physical default.
+  if (!hasUsableDefaultRoute()) {
+    try {
+      const r = spawnSync("/sbin/ifconfig", ["-l"], { encoding: "utf8" });
+      for (const iface of (r.stdout || "").trim().split(/\s+/)) {
+        if (!/^en\d+$/.test(iface)) continue;
+        spawnSync("/usr/sbin/ipconfig", ["set", iface, "DHCP"], {
+          stdio: "ignore",
+        });
+      }
+    } catch {
+      /* best-effort */
     }
-  } catch {
-    /* best-effort */
   }
 
   // Invalidate resolver caches so any in-flight lookups don't keep

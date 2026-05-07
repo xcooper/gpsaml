@@ -12,7 +12,7 @@ import {
   StatusWindowHandle,
 } from "./connection-status-window";
 import { loadResource } from "./resource";
-import { ChildProcess } from "child_process";
+import { ChildProcess, spawnSync } from "child_process";
 import { existsSync } from "fs";
 
 // Disable GPU to avoid crashes in headless/server environments
@@ -60,6 +60,98 @@ function stopTrayAnimation(): void {
   if (trayAnimTimer) {
     clearInterval(trayAnimTimer);
     trayAnimTimer = null;
+  }
+}
+
+// Send SIGTERM to openconnect and wait up to `timeoutMs` for it to exit.
+// openconnect handles SIGTERM by running its `vpnc-script disconnect` to
+// restore routes and DNS; we need to give it that window before letting
+// the app quit. SIGKILL is used as a last resort.
+function waitForVpnExit(proc: ChildProcess, timeoutMs = 5000): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (proc.exitCode !== null) {
+      resolve();
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (proc.exitCode === null) {
+        try {
+          proc.kill("SIGKILL");
+        } catch {
+          /* already gone */
+        }
+      }
+      resolve();
+    }, timeoutMs);
+    proc.once("close", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+    try {
+      proc.kill();
+    } catch {
+      /* already gone */
+    }
+  });
+}
+
+// Best-effort recovery from a botched openconnect teardown on macOS.
+// The bundled vpnc-script often leaves either (a) the kernel default
+// route still pointing at a now-dead utun gateway, or (b) the system
+// resolver pinned to an unreachable internal DNS server (the
+// "** Error: The parameters were not valid." line in the log). Without
+// this routine, users have to toggle Wi-Fi off/on by hand to recover.
+function cleanupAfterDisconnect(): void {
+  if (process.platform !== "darwin") return;
+
+  // Drop any default routes still pointing at a torn-down VPN tunnel.
+  try {
+    const netstat = spawnSync("/usr/sbin/netstat", ["-rn", "-f", "inet"], {
+      encoding: "utf8",
+    });
+    for (const line of (netstat.stdout || "").split("\n")) {
+      if (!line.startsWith("default")) continue;
+      const cols = line.split(/\s+/);
+      const gateway = cols[1];
+      const iface = cols[cols.length - 1];
+      if (/^utun\d+$/.test(iface)) {
+        spawnSync("/sbin/route", ["-n", "delete", "default", gateway], {
+          stdio: "ignore",
+        });
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
+
+  // Force DHCP renewal on each physical interface. This reinstalls the
+  // original default route, DNS servers and search domains in one shot —
+  // equivalent in effect to toggling Wi-Fi off/on but without dropping
+  // the link layer.
+  try {
+    const r = spawnSync("/sbin/ifconfig", ["-l"], { encoding: "utf8" });
+    for (const iface of (r.stdout || "").trim().split(/\s+/)) {
+      if (!/^en\d+$/.test(iface)) continue;
+      spawnSync("/usr/sbin/ipconfig", ["set", iface, "BOOTP"], {
+        stdio: "ignore",
+      });
+      spawnSync("/usr/sbin/ipconfig", ["set", iface, "DHCP"], {
+        stdio: "ignore",
+      });
+    }
+  } catch {
+    /* best-effort */
+  }
+
+  // Invalidate resolver caches so any in-flight lookups don't keep
+  // hitting the now-unreachable VPN DNS servers.
+  try {
+    spawnSync("/usr/bin/dscacheutil", ["-flushcache"], { stdio: "ignore" });
+    spawnSync("/usr/bin/killall", ["-HUP", "mDNSResponder"], {
+      stdio: "ignore",
+    });
+  } catch {
+    /* best-effort */
   }
 }
 
@@ -151,10 +243,12 @@ async function enterEntryPoint(): Promise<void> {
       statusWindow?.notifyDisconnected();
     });
     await statusWindow.awaitDisconnect;
-    if (vpnProcess && vpnProcess.exitCode === null) {
-      vpnProcess.kill();
-    }
+    const proc = vpnProcess;
     vpnProcess = null;
+    if (proc) {
+      await waitForVpnExit(proc);
+    }
+    cleanupAfterDisconnect();
     statusWindow.close();
     statusWindow = null;
     app.quit();

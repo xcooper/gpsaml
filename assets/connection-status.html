@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>gpsaml — active</title>
+  <style>
+    :root {
+      --bg: #FAF9F7;
+      --surface: #FFFFFF;
+      --border: #ECE8E1;
+      --border-strong: #1A1A1A;
+      --text: #0E0E10;
+      --text-dim: #6B6660;
+      --text-faint: #A8A29A;
+      --orange: #F58025;
+      --orange-deep: #D66B14;
+      --orange-soft: rgba(245, 128, 37, 0.18);
+      --orange-glow: rgba(245, 128, 37, 0.32);
+      --alert: #D72638;
+      --alert-soft: rgba(215, 38, 56, 0.16);
+
+      --font-display: -apple-system, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+      --font-text: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "Menlo", "Monaco", monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-text);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      user-select: none; -webkit-user-select: none;
+      cursor: default;
+      display: flex; flex-direction: column;
+    }
+
+    .status-bar {
+      flex: none;
+      display: flex; align-items: center; gap: 8px;
+      height: 30px; padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.04em; color: var(--text-dim);
+    }
+    .status-bar .pup { font-size: 13px; filter: saturate(1.05); }
+    .status-bar .brand {
+      color: var(--text); font-weight: 600;
+      font-family: var(--font-display); font-size: 11px;
+    }
+    .status-bar .sep { color: var(--text-faint); }
+    .status-bar .spacer { flex: 1; }
+    .status-bar .indicator { display: flex; align-items: center; gap: 6px; }
+    .status-bar .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 2px var(--orange-soft);
+    }
+    .status-bar.disconnected .led {
+      background: var(--alert);
+      box-shadow: 0 0 0 2px var(--alert-soft);
+    }
+
+    /* === main === */
+    main {
+      flex: 1;
+      padding: 20px 24px 22px;
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      gap: 6px;
+      min-height: 0;
+    }
+
+    /* === sonar pulse === */
+    .pulse {
+      position: relative;
+      width: 130px; height: 130px;
+      flex: none;
+      display: flex; align-items: center; justify-content: center;
+      margin: 6px 0;
+    }
+    .pulse .ring {
+      position: absolute;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      border: 1.5px solid var(--orange);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: sonar 2.6s ease-out infinite;
+      opacity: 0;
+    }
+    .pulse .ring.r1 { animation-delay: 0s; }
+    .pulse .ring.r2 { animation-delay: 0.65s; }
+    .pulse .ring.r3 { animation-delay: 1.3s; }
+    @keyframes sonar {
+      0%   { width: 60px; height: 60px; opacity: 0.7; }
+      85%  { opacity: 0; }
+      100% { width: 128px; height: 128px; opacity: 0; }
+    }
+
+    .pup-mark {
+      position: relative;
+      z-index: 2;
+      width: 64px; height: 64px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--orange);
+      border-radius: 50%;
+      box-shadow: 0 6px 20px var(--orange-glow), 0 0 0 4px var(--surface);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      animation: bob 2.6s ease-in-out infinite;
+    }
+    .pup-mark svg { width: 40px; height: 40px; display: block; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-2px); }
+    }
+
+    /* tick marks at cardinal points */
+    .pulse::before, .pulse::after {
+      content: '';
+      position: absolute;
+      background: var(--text-faint);
+      opacity: 0.45;
+    }
+    .pulse::before {
+      top: 0; left: 50%;
+      width: 1px; height: 6px;
+      transform: translateX(-50%);
+      box-shadow: 0 124px 0 0 var(--text-faint);
+    }
+    .pulse::after {
+      top: 50%; left: 0;
+      width: 6px; height: 1px;
+      transform: translateY(-50%);
+      box-shadow: 124px 0 0 0 var(--text-faint);
+    }
+
+    /* === states === */
+    .pulse.disconnecting .ring {
+      animation-duration: 1.3s;
+      border-color: var(--text-faint);
+    }
+    .pulse.disconnecting .pup-mark {
+      background: var(--text-faint);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 0 0 4px var(--surface);
+      animation: none;
+      filter: grayscale(0.6);
+    }
+    .pulse.disconnected .ring { display: none; }
+    .pulse.disconnected .pup-mark {
+      background: var(--alert);
+      box-shadow: 0 4px 16px var(--alert-soft), 0 0 0 4px var(--surface);
+      animation: none;
+      filter: grayscale(0.85) brightness(0.9);
+    }
+
+    /* === text === */
+    .label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-top: 6px;
+    }
+    .label.disconnecting { color: var(--text-dim); }
+    .label.disconnected  { color: var(--alert); }
+
+    .headline {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin: 4px 0 0; line-height: 1.05;
+    }
+
+    /* === meta === */
+    .meta {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .meta-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      gap: 12px;
+    }
+    .meta-key {
+      color: var(--text-faint);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 9px;
+      font-weight: 500;
+      flex: none;
+    }
+    .meta-val {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+      direction: rtl; text-align: right;
+    }
+    .meta-val.uptime { color: var(--orange); direction: ltr; font-weight: 600; }
+
+    /* === action === */
+    .actions {
+      width: 100%;
+      margin-top: auto;
+      padding-top: 10px;
+      display: flex; justify-content: center;
+    }
+
+    .btn {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--surface);
+      color: var(--alert);
+      border: 1.5px solid var(--alert);
+      border-radius: 6px;
+      padding: 9px 22px;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+      box-shadow: 0 2px 0 var(--alert);
+    }
+    .btn:hover {
+      background: var(--alert); color: var(--surface);
+      box-shadow: 0 2px 0 #9c1a26;
+    }
+    .btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--alert); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <header class="status-bar" id="bar">
+    <span class="pup" aria-hidden="true">🦮</span>
+    <span class="brand">gpsaml</span>
+    <span class="sep">·</span>
+    <span id="step">step 03 / 03 — tunnel</span>
+    <span class="spacer"></span>
+    <span class="indicator"><span class="led"></span><span id="indicatorText">live</span></span>
+  </header>
+
+  <main>
+    <div class="pulse" id="pulse">
+      <span class="ring r1"></span>
+      <span class="ring r2"></span>
+      <span class="ring r3"></span>
+      <div class="pup-mark" aria-hidden="true">
+        <!-- Stylized bulldog face SVG -->
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <!-- Ears (folded) -->
+          <path fill="#FFFFFF" d="M 22 22 Q 18 14, 30 16 Q 32 28, 28 32 Z"/>
+          <path fill="#FFFFFF" d="M 78 22 Q 82 14, 70 16 Q 68 28, 72 32 Z"/>
+          <!-- Head -->
+          <ellipse fill="#FFFFFF" cx="50" cy="46" rx="32" ry="26"/>
+          <!-- Jowls -->
+          <path fill="#FFFFFF" d="M 18 54 Q 14 76, 36 80 Q 50 82, 64 80 Q 86 76, 82 54 Q 76 64, 50 66 Q 24 64, 18 54 Z"/>
+          <!-- Eyes -->
+          <ellipse fill="#0E0E10" cx="36" cy="42" rx="3.2" ry="4"/>
+          <ellipse fill="#0E0E10" cx="64" cy="42" rx="3.2" ry="4"/>
+          <circle fill="#FFFFFF" cx="37" cy="41" r="1"/>
+          <circle fill="#FFFFFF" cx="65" cy="41" r="1"/>
+          <!-- Nose -->
+          <path fill="#0E0E10" d="M 44 54 Q 50 50, 56 54 Q 55 60, 50 62 Q 45 60, 44 54 Z"/>
+          <!-- Underbite (tiny teeth) -->
+          <rect fill="#FFFFFF" x="46" y="68" width="2" height="3" rx="0.5"/>
+          <rect fill="#FFFFFF" x="52" y="68" width="2" height="3" rx="0.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="label" id="label">tunnel established</div>
+    <h1 class="headline" id="headline">connected</h1>
+
+    <div class="meta">
+      <div class="meta-row">
+        <span class="meta-key">gateway</span>
+        <span class="meta-val" id="gateway">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-key">uptime</span>
+        <span class="meta-val uptime" id="uptime">00:00:00</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="disconnect" class="btn">disconnect</button>
+    </div>
+  </main>
+
+  <script src="./connection-status.js"></script>
+</body>
+</html>
